@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build / generated output
+dist/
+build/
+*.tsbuildinfo
+coverage/
+
+# Secrets — App Store Connect API credentials must never be committed
+*.p8
+.env
+.env.*
+!.env.example
+
+# Downloaded report artifacts (analytics / sales .gz + extracted TSV)
+*.gz
+/reports/
+.debug-output/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Temp
+*.tmp
+*.bak
+
+# Claude Code — ignore personal/local state, keep shared config (.claude/rules)
+.claude/settings.local.json
+.claude/projects/
+.claude/plans/
+.claude/stats-cache.json
+.claude/worktrees/

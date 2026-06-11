@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "WebFetch",
+      "WebSearch",
+      "Bash",
+      "PowerShell"
+    ],
+    "deny": [],
+    "ask": [
+      "Bash(*git push --force*)",
+      "Bash(*git push -f*)",
+      "Bash(*git reset --hard*)",
+      "Bash(*git clean -f*)",
+      "Bash(*git branch -D *)",
+      "Bash(*rm -rf /*)",
+      "Bash(*rm -rf ~*)",
+      "PowerShell(*git push --force*)",
+      "PowerShell(*git push -f*)",
+      "PowerShell(*git reset --hard*)",
+      "PowerShell(*git clean -f*)",
+      "PowerShell(*git branch -D *)",
+      "PowerShell(*Remove-Item*-Recurse*-Force*)",
+      "PowerShell(*Remove-Item*-Force*-Recurse*)",
+      "PowerShell(*rd /s /q*)",
+      "PowerShell(*rmdir /s /q*)",
+      "PowerShell(*Stop-Process*-Force*)",
+      "PowerShell(*Set-ExecutionPolicy*)"
+    ]
+  },
+  "enabledPlugins": {
+    "skill-creator@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "context7@claude-plugins-official": true
+  },
+  "plansDirectory": ".claude/plans"
+}
