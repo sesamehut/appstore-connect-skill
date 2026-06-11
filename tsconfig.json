@@ -1,0 +1,25 @@
+{
+  // Checking-only project: covers src, tests, and tooling config so the
+  // editor, `tsc -p tsconfig.json`, and type-aware lint all see one world.
+  // Emit is owned by tsconfig.build.json.
+  "compilerOptions": {
+    "module": "nodenext",
+    "target": "es2024",
+    "lib": ["es2024"],
+    "moduleDetection": "force",
+    // Node globals (URL, fetch, process) come in deliberately, not via
+    // whatever happens to sit in node_modules/@types.
+    "types": ["node"],
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    // The generated ASC contract (M1) is a huge d.ts-shaped boundary artifact;
+    // re-checking dependency declarations would dominate check time for no gain.
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src", "tests", "vitest.config.ts"]
+}

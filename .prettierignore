@@ -1,0 +1,7 @@
+# npm owns the lockfile format.
+package-lock.json
+# Markdown stays hand-formatted: docs/ is Chinese prose where Prettier's CJK
+# line-wrapping does more harm than good.
+*.md
+# Tool-managed Claude Code workspace files.
+.claude/
