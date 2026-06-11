@@ -91,9 +91,10 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   claims across product scope, architecture, implementation notes, and research.
   If a claim depends on current Apple behavior, check the official source before
   presenting it as current.
-- **Code changes** - run the available project checks from the repo root. Once
-  package scripts exist, prefer the repository's documented check scripts over
-  ad-hoc commands.
+- **Code changes** - run `npm run check` from the repo root: typecheck, lint,
+  format check, and tests - the same gate CI runs on every PR and push to main.
+  Individual scripts: `typecheck`, `lint`, `format`, `format:check`, `test`,
+  `test:watch`, `coverage`, `build`.
 - **Generated contract changes** - regenerate from the official Apple contract
   and verify the generated output is reproducible. Never hand-edit generated
   contract artifacts.
