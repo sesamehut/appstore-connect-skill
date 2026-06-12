@@ -91,13 +91,17 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   claims across product scope, architecture, implementation notes, and research.
   If a claim depends on current Apple behavior, check the official source before
   presenting it as current.
-- **Code changes** - run `npm run check` from the repo root: typecheck, lint,
-  format check, and tests - the same gate CI runs on every PR and push to main.
-  Individual scripts: `typecheck`, `lint`, `format`, `format:check`, `test`,
-  `test:watch`, `coverage`, `build`.
-- **Generated contract changes** - regenerate from the official Apple contract
-  and verify the generated output is reproducible. Never hand-edit generated
-  contract artifacts.
+- **Code changes** - run `npm run check` from the repo root: contract verify,
+  typecheck, lint, format check, and tests - the same gate CI runs on every PR
+  and push to main. Individual scripts: `typecheck`, `lint`, `format`,
+  `format:check`, `test`, `test:watch`, `coverage`, `build`.
+- **Generated contract changes** - regenerate with `npm run contract:update`
+  (fetches the latest official Apple spec, regenerates `src/generated/`, and
+  refreshes the metadata manifest). Generation is deterministic: re-running on
+  an unchanged spec must produce a zero diff. Never hand-edit generated
+  contract artifacts - `contract:verify` (first gate in `check`) fails on any
+  artifact/manifest mismatch. A weekly CI job (`contract:drift`) flags new
+  Apple spec releases.
 
 ## Debug output
 
