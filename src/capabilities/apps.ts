@@ -1,6 +1,6 @@
-import { AscUpstreamError } from "../errors.js";
 import type { components, operations } from "../generated/asc-openapi.js";
 import type { AscClient } from "../http/client.js";
+import { expectDocument } from "./internal.js";
 import { readPaged } from "../pagination/paginate.js";
 import type {
   CollectedRead,
@@ -76,12 +76,5 @@ export async function getApp(
   const { data } = await client.GET("/v1/apps/{id}", {
     params: { path: { id: appId }, query },
   });
-  if (data === undefined) {
-    // Unreachable by construction: the auth middleware throws on every
-    // non-OK response. Kept so the return type stays clean if that drifts.
-    throw new AscUpstreamError(
-      "ASC returned a success status without a response document.",
-    );
-  }
-  return data;
+  return expectDocument(data);
 }

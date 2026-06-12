@@ -1,49 +1,25 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { loadAscCredentialsFromEnv } from "../src/auth/credentials.js";
 import { getApp, listApps } from "../src/capabilities/apps.js";
 import { listAppStoreVersions } from "../src/capabilities/app-store-versions.js";
-import {
-  AscError,
-  AscNotFoundError,
-  AscPermissionError,
-} from "../src/errors.js";
-import type { AscApiErrorItem } from "../src/errors.js";
-import { ASC_API_BASE_URL, createAscClient } from "../src/http/client.js";
+import { AscNotFoundError, AscPermissionError } from "../src/errors.js";
+import { ASC_API_BASE_URL } from "../src/http/client.js";
 import type { AscClient } from "../src/http/client.js";
+import {
+  ascItem,
+  JSON_HEADERS,
+  makeOfflineClient,
+  thrownBy,
+} from "./helpers/asc-fixtures.js";
 import { useMockAgent } from "./helpers/mock-agent.js";
-import { makeTestKey } from "./helpers/test-credentials.js";
 
 const getAgent = useMockAgent();
 
 let client: AscClient;
 
 beforeAll(async () => {
-  const key = await makeTestKey();
-  const credentials = await loadAscCredentialsFromEnv(key.envTeam);
-  client = createAscClient({ credentials });
+  client = await makeOfflineClient();
 });
-
-const JSON_HEADERS = { "content-type": "application/json" };
-
-function ascItem(overrides: Partial<AscApiErrorItem>): AscApiErrorItem {
-  return {
-    code: "ERROR",
-    status: "400",
-    title: "Error",
-    detail: "Detail",
-    ...overrides,
-  };
-}
-
-async function thrownBy(promise: Promise<unknown>): Promise<AscError> {
-  const thrown = await promise.then(
-    () => expect.fail("expected the call to throw"),
-    (error: unknown) => error,
-  );
-  expect(thrown).toBeInstanceOf(AscError);
-  return thrown as AscError;
-}
 
 describe("listApps", () => {
   it("maps options onto the JSON:API query surface", async () => {

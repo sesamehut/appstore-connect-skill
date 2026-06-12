@@ -94,4 +94,59 @@ export type {
   ListAppStoreVersionsOptions,
 } from "./capabilities/app-store-versions.js";
 
+export { getAppInfo, listAppInfos } from "./capabilities/app-infos.js";
+export type {
+  AppInfo,
+  AppInfoResponse,
+  GetAppInfoOptions,
+  ListAppInfosOptions,
+} from "./capabilities/app-infos.js";
+
+export {
+  createAppInfoLocalization,
+  getAppInfoLocalization,
+  listAppInfoLocalizations,
+  updateAppInfoLocalization,
+} from "./capabilities/app-info-localizations.js";
+export type {
+  AppInfoLocalization,
+  AppInfoLocalizationCreateAttributes,
+  AppInfoLocalizationResponse,
+  AppInfoLocalizationUpdateAttributes,
+  GetAppInfoLocalizationOptions,
+  ListAppInfoLocalizationsOptions,
+} from "./capabilities/app-info-localizations.js";
+
+export {
+  createAppStoreVersionLocalization,
+  getAppStoreVersionLocalization,
+  listAppStoreVersionLocalizations,
+  updateAppStoreVersionLocalization,
+} from "./capabilities/app-store-version-localizations.js";
+export type {
+  AppStoreVersionLocalization,
+  AppStoreVersionLocalizationCreateAttributes,
+  AppStoreVersionLocalizationResponse,
+  AppStoreVersionLocalizationUpdateAttributes,
+  GetAppStoreVersionLocalizationOptions,
+  ListAppStoreVersionLocalizationsOptions,
+} from "./capabilities/app-store-version-localizations.js";
+
+export {
+  getCustomerReview,
+  getCustomerReviewResponse,
+  listCustomerReviewsForApp,
+  listCustomerReviewsForVersion,
+  setCustomerReviewResponse,
+} from "./capabilities/customer-reviews.js";
+export type {
+  CustomerReview,
+  CustomerReviewResponse,
+  CustomerReviewResponseV1,
+  CustomerReviewResponseV1Response,
+  GetCustomerReviewOptions,
+  GetCustomerReviewResponseOptions,
+  ListCustomerReviewsOptions,
+} from "./capabilities/customer-reviews.js";
+
 export type { components, operations, paths } from "./generated/asc-openapi.js";
