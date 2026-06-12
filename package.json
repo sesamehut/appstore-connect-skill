@@ -20,7 +20,7 @@
     "contract:update": "npm run contract:fetch && npm run contract:generate",
     "contract:verify": "node scripts/contract/verify.mjs",
     "contract:drift": "npm run contract:fetch && node scripts/contract/check-drift.mjs",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test"
+    "check": "npm run contract:verify && npm run typecheck && npm run lint && npm run format:check && npm run test"
   },
   "overrides": {
     "openapi-typescript": {
