@@ -29,6 +29,10 @@ export function mapAscErrorToExit(category: AscErrorCategory): number {
     case "invalid-parameter":
     case "upstream":
     case "network":
+    case "file-processing":
+      // file-processing shares this partition deliberately: the agent's next
+      // action — read the stderr category + stage hint, then retry or report
+      // — is the same as for the other request-path failures.
       return EXIT.ascRequest;
   }
 }

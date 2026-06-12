@@ -7,9 +7,9 @@ export type AscApiErrorItem = NonNullable<
 >[number];
 
 /**
- * Semantic failure classification shared by every layer. M5/M6 extend this
- * union with a `file-processing` family (download/unpack/parse/upload stages)
- * without touching the existing categories.
+ * Semantic failure classification shared by every layer. M6 extends the
+ * `file-processing` family with upload-side stages without touching the
+ * existing categories.
  */
 export type AscErrorCategory =
   | "credential"
@@ -19,7 +19,8 @@ export type AscErrorCategory =
   | "invalid-parameter"
   | "rate-limit"
   | "upstream"
-  | "network";
+  | "network"
+  | "file-processing";
 
 /** Non-sensitive request coordinates attached to errors for diagnostics. */
 export interface AscRequestContext {
@@ -154,5 +155,42 @@ export class AscNetworkError extends AscError {
   constructor(message: string, attempts: number, options?: AscErrorOptions) {
     super(message, options);
     this.attempts = attempts;
+  }
+}
+
+/**
+ * Where a multi-step file flow failed. M5 carries the download side; M6 adds
+ * "upload" and "commit" for the media asset flow.
+ */
+export type FileProcessingStage =
+  | "download"
+  | "decompress"
+  | "parse"
+  | "checksum"
+  | "write";
+
+/**
+ * A report/media file flow failed outside the HTTP request itself (the
+ * request layer already normalizes those). The stage discriminant is what
+ * keeps "report not generated", "file corrupted in transit", and "local disk
+ * problem" separately diagnosable, per the request-model error contract.
+ */
+export class AscFileProcessingError extends AscError {
+  readonly category = "file-processing";
+  readonly stage: FileProcessingStage;
+  /** Local path or external URL involved. Never carries credentials. */
+  readonly target?: string;
+
+  constructor(
+    message: string,
+    stage: FileProcessingStage,
+    options: AscErrorOptions & { readonly target?: string } = {},
+  ) {
+    const { target, ...errorOptions } = options;
+    super(message, errorOptions);
+    this.stage = stage;
+    if (target !== undefined) {
+      this.target = target;
+    }
   }
 }

@@ -4,6 +4,7 @@ import {
   AscAuthenticationError,
   AscCredentialError,
   AscError,
+  AscFileProcessingError,
   AscInvalidParameterError,
   AscNetworkError,
   AscNotFoundError,
@@ -25,6 +26,7 @@ describe("AscError hierarchy", () => {
     [new AscRateLimitFloorError("m", 100), "rate-limit"],
     [new AscUpstreamError("m"), "upstream"],
     [new AscNetworkError("m", 3), "network"],
+    [new AscFileProcessingError("m", "download"), "file-processing"],
   ];
 
   it("every subclass is an AscError and an Error", () => {
@@ -105,6 +107,19 @@ describe("AscError hierarchy", () => {
 
     expect(error.pagination).toEqual({ pagesRead: 2, itemsRead: 4 });
     expect(new AscPermissionError("m").pagination).toBeUndefined();
+  });
+
+  it("exposes the file-processing stage and target", () => {
+    const cause = new Error("unexpected end of file");
+    const error = new AscFileProcessingError("m", "decompress", {
+      cause,
+      target: "C:\\reports\\sales.tsv",
+    });
+
+    expect(error.stage).toBe("decompress");
+    expect(error.target).toBe("C:\\reports\\sales.tsv");
+    expect(error.cause).toBe(cause);
+    expect(new AscFileProcessingError("m", "checksum").target).toBeUndefined();
   });
 
   it("keeps the floor error within the rate-limit family", () => {

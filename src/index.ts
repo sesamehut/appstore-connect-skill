@@ -29,6 +29,7 @@ export {
   AscAuthenticationError,
   AscCredentialError,
   AscError,
+  AscFileProcessingError,
   AscInvalidParameterError,
   AscNetworkError,
   AscNotFoundError,
@@ -44,6 +45,7 @@ export type {
   AscPaginationProgress,
   AscRequestContext,
   CredentialErrorReason,
+  FileProcessingStage,
 } from "./errors.js";
 
 export { ASC_API_BASE_URL, createAscClient } from "./http/client.js";

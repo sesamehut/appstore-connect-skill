@@ -1,5 +1,9 @@
-import type { AscError, CredentialErrorReason } from "../errors.js";
-import { AscCredentialError } from "../errors.js";
+import type {
+  AscError,
+  CredentialErrorReason,
+  FileProcessingStage,
+} from "../errors.js";
+import { AscCredentialError, AscFileProcessingError } from "../errors.js";
 import { ASC_ENV_VARS } from "../auth/credentials.js";
 import type { RateLimitSnapshot } from "../http/rate-limit.js";
 import type { CollectedRead, ReadScope } from "../pagination/paginate.js";
@@ -78,6 +82,13 @@ export function documentEnvelope(
  */
 export function renderAscError(io: CliIo, error: AscError): void {
   io.err(`error[${error.category}]: ${error.message}`);
+  if (error instanceof AscFileProcessingError) {
+    // The stage is the machine-readable discriminant within the category,
+    // mirroring how the category itself is machine-readable in the prefix.
+    io.err(
+      `stage: ${error.stage}${error.target === undefined ? "" : ` (${error.target})`}`,
+    );
+  }
   io.err(`hint: ${hintFor(error)}`);
   if (error.apiErrors.length > 0) {
     io.err(
@@ -106,9 +117,25 @@ const CREDENTIAL_HINTS: Record<CredentialErrorReason, string> = {
   "invalid-private-key": `The private key must be the unmodified .p8 file content downloaded from App Store Connect (PKCS#8 EC P-256).`,
 };
 
+const FILE_PROCESSING_HINTS: Record<FileProcessingStage, string> = {
+  download:
+    "The file transfer failed mid-stream. Re-run the command; analytics segment URLs are short-lived, so a fresh run fetches fresh URLs.",
+  decompress:
+    "The downloaded file is not valid gzip — likely corrupted in transit. Re-run the command; if it persists, the report for this date may be malformed on Apple's side.",
+  parse:
+    "The report landed on disk but could not be parsed for the summary or JSON conversion. The raw file is intact at the reported path; inspect it manually.",
+  checksum:
+    "The downloaded bytes do not match Apple's checksum. The corrupt file was kept with a .corrupt suffix for inspection; re-run to download again.",
+  write:
+    "Writing to disk failed. Check the --output path, directory permissions, and free space.",
+};
+
 function hintFor(error: AscError): string {
   if (error instanceof AscCredentialError) {
     return CREDENTIAL_HINTS[error.reason];
+  }
+  if (error instanceof AscFileProcessingError) {
+    return FILE_PROCESSING_HINTS[error.stage];
   }
   switch (error.category) {
     case "credential":
@@ -128,5 +155,8 @@ function hintFor(error: AscError): string {
       return "ASC-side failure. Retry later; if it persists, check Apple's system status page.";
     case "network":
       return "No response from api.appstoreconnect.apple.com. Check connectivity, proxy, and firewall settings.";
+    case "file-processing":
+      // Unreachable: every file-processing error is an AscFileProcessingError.
+      return FILE_PROCESSING_HINTS.download;
   }
 }

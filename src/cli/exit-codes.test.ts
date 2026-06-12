@@ -14,6 +14,7 @@ describe("mapAscErrorToExit", () => {
       "rate-limit": EXIT.rateLimit,
       upstream: EXIT.ascRequest,
       network: EXIT.ascRequest,
+      "file-processing": EXIT.ascRequest,
     };
     for (const [category, code] of Object.entries(expected)) {
       expect(mapAscErrorToExit(category as AscErrorCategory)).toBe(code);
