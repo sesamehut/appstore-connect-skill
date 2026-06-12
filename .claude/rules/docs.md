@@ -45,6 +45,10 @@ This file is the docs entry point and inventory.
     - `m2-auth-request-core.md` — Completed M2 phase plan: authentication
       and request core (credential model, token lifecycle, thin request
       layer, error normalization, rate-limit passthrough)
+    - `m3-pagination-first-reads.md` — Completed M3 phase plan: pagination
+      module (cursor continuation, read scopes, quota floor guard, failure
+      progress context) and the first read-capability slice (apps and
+      versions)
 
 ## Rules
 
