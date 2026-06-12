@@ -1,5 +1,11 @@
 import { describe, expectTypeOf, it } from "vitest";
+
 import type { components, paths } from "../src/generated/asc-openapi.js";
+import type {
+  PagedGetPath,
+  PageItemOf,
+  PageOf,
+} from "../src/pagination/paged-types.js";
 
 // Review guard for the generated contract: regeneration is never reviewed
 // line-by-line, so a silently-empty artifact, a generator switch away from
@@ -46,5 +52,37 @@ describe("generated ASC contract", () => {
     expectTypeOf<
       components["schemas"]["AppsResponse"]["links"]
     >().toEqualTypeOf<components["schemas"]["PagedDocumentLinks"]>();
+  });
+});
+
+// The pagination layer's structural endpoint filter must keep admitting
+// collection endpoints and rejecting detail endpoints across contract
+// regenerations; a drift here is an M3 design assumption being broken.
+type Extends<A, B> = [A] extends [B] ? true : false;
+
+describe("pagination endpoint filter", () => {
+  it("admits cursor-paged collection endpoints", () => {
+    expectTypeOf<Extends<"/v1/apps", PagedGetPath>>().toEqualTypeOf<true>();
+    expectTypeOf<
+      Extends<"/v1/apps/{id}/appStoreVersions", PagedGetPath>
+    >().toEqualTypeOf<true>();
+  });
+
+  it("rejects single-resource detail endpoints", () => {
+    expectTypeOf<
+      Extends<"/v1/apps/{id}", PagedGetPath>
+    >().toEqualTypeOf<false>();
+  });
+
+  it("resolves page and item types to the contract schemas", () => {
+    expectTypeOf<PageOf<"/v1/apps">>().toEqualTypeOf<
+      components["schemas"]["AppsResponse"]
+    >();
+    expectTypeOf<PageItemOf<"/v1/apps">>().toEqualTypeOf<
+      components["schemas"]["App"]
+    >();
+    expectTypeOf<PageItemOf<"/v1/apps/{id}/appStoreVersions">>().toEqualTypeOf<
+      components["schemas"]["AppStoreVersion"]
+    >();
   });
 });
