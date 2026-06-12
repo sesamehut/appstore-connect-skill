@@ -3,6 +3,7 @@ import type { CommandDef } from "citty";
 
 import { NotImplementedError } from "../exit-codes.js";
 import { reportsAnalyticsCommand } from "./reports-analytics.js";
+import { reportsSalesCommand } from "./reports-sales.js";
 
 /**
  * Transitional stub for a reports sub-domain still landing within M5: keeps
@@ -27,7 +28,7 @@ export const reportsCommand = defineCommand({
     description: "Sales, finance, and analytics report workflows",
   },
   subCommands: {
-    sales: plannedSubdomain("sales", "Sales and trends report downloads"),
+    sales: reportsSalesCommand,
     finance: plannedSubdomain("finance", "Finance report downloads"),
     analytics: reportsAnalyticsCommand,
   },

@@ -7,6 +7,7 @@ import {
   checkCredentials,
   checkDependencies,
   checkNodeVersion,
+  checkVendorNumber,
 } from "../preflight.js";
 
 /**
@@ -29,6 +30,7 @@ export const doctorCommand = defineCommand({
       await checkDependencies(),
       await checkBuild(),
       await checkCredentials(cli.env),
+      checkVendorNumber(cli.env),
     ];
     const ok = checks.every((check) => check.status === "pass");
 

@@ -531,6 +531,13 @@ export function analyticsSegmentFileName(
   return `segment-${String(index).padStart(3, "0")}.${extension}`;
 }
 
+/** Swaps a known report extension for .json, appending when unrecognized. */
+export function jsonSiblingPath(reportPath: string): string {
+  return /\.(tsv|csv|txt)$/i.test(reportPath)
+    ? reportPath.replace(/\.(tsv|csv|txt)$/i, ".json")
+    : `${reportPath}.json`;
+}
+
 function slugify(value: string): string {
   const slug = value
     .toLowerCase()

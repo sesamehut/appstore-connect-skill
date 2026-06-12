@@ -3,6 +3,7 @@ import {
   ASC_ENV_VARS,
 } from "../auth/credentials.js";
 import { AscCredentialError } from "../errors.js";
+import { ASC_VENDOR_NUMBER_ENV } from "./report-flags.js";
 
 /**
  * Kept as a constant (not read from package.json at runtime) so the M8
@@ -115,6 +116,24 @@ export async function checkCredentials(
     }
     throw error;
   }
+}
+
+/**
+ * Optional account configuration: reports commands need a vendor number, the
+ * rest of the CLI does not, so this check informs without ever failing.
+ */
+export function checkVendorNumber(
+  env: Readonly<Record<string, string | undefined>>,
+): DoctorCheck {
+  const vendor = env[ASC_VENDOR_NUMBER_ENV];
+  return {
+    name: "vendor-number",
+    status: "pass",
+    detail:
+      vendor === undefined || vendor === ""
+        ? `${ASC_VENDOR_NUMBER_ENV} is not set (optional; sales/finance report downloads need it via this variable or --vendor)`
+        : `${ASC_VENDOR_NUMBER_ENV} is set (ending ...${vendor.slice(-4)})`,
+  };
 }
 
 function credentialFix(error: AscCredentialError): string {

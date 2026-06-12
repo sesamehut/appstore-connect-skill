@@ -187,6 +187,7 @@ export {
   defaultSalesReportFileName,
   downloadExternalFile,
   isGzipMagic,
+  jsonSiblingPath,
   saveReportStream,
 } from "./workflows/report-files.js";
 export type {
@@ -196,5 +197,13 @@ export type {
   SavedReportFile,
   SaveReportStreamOptions,
 } from "./workflows/report-files.js";
+
+export { downloadSalesReport } from "./workflows/sales-reports.js";
+export type {
+  SalesReportFrequency,
+  SalesReportSpec,
+  SalesReportSubType,
+  SalesReportType,
+} from "./workflows/sales-reports.js";
 
 export type { components, operations, paths } from "./generated/asc-openapi.js";
