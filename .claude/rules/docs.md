@@ -30,8 +30,8 @@ This file is the docs entry point and inventory.
   - `sdk-comparison.md` — Background for the ASC SDK selection
   - `mcp-skill-landscape.md` — Background on the ASC MCP server / Claude Skill
     tooling ecosystem
-  - `codegen-and-runtime-stack.md` — Evidence base for the OpenAPI codegen and
-    Node runtime stack selection
+  - `codegen-and-runtime-stack.md` — Evidence base for the OpenAPI codegen,
+    Node runtime stack, and CLI framework selection
 - `testing/` — Cross-cutting test strategy (currently empty; reserved)
 - `phases/` — Phase planning and milestone tracking
   - `roadmap.md` — Milestone roadmap from design stage to a distributable
@@ -49,6 +49,10 @@ This file is the docs entry point and inventory.
       module (cursor continuation, read scopes, quota floor guard, failure
       progress context) and the first read-capability slice (apps and
       versions)
+    - `m4-metadata-reviews-skill-entry.md` — Completed M4 phase plan:
+      metadata and localization read/write capabilities, customer reviews
+      and developer responses, and the minimal Skill entry (citty CLI +
+      SKILL.md)
 
 ## Rules
 
