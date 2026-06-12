@@ -1,7 +1,7 @@
-// Public surface of the M2 request core. Higher layers (pagination,
-// workflows, the Skill CLI) build on these exports; the generated contract
-// types are re-exported so consumers never import from src/generated/
-// directly.
+// Public surface of the runtime layers delivered so far (auth + request
+// core, pagination, first capabilities). Higher layers (workflows, the Skill
+// CLI) build on these exports; the generated contract types are re-exported
+// so consumers never import from src/generated/ directly.
 
 export { ASC_ENV_VARS, loadAscCredentialsFromEnv } from "./auth/credentials.js";
 export type {
@@ -34,12 +34,14 @@ export {
   AscNotFoundError,
   AscPermissionError,
   AscRateLimitError,
+  AscRateLimitFloorError,
   AscUpstreamError,
 } from "./errors.js";
 export type {
   AscApiErrorItem,
   AscErrorCategory,
   AscErrorOptions,
+  AscPaginationProgress,
   AscRequestContext,
   CredentialErrorReason,
 } from "./errors.js";
@@ -60,5 +62,36 @@ export type {
   RetryOptions,
   TransportOptions,
 } from "./http/transport.js";
+
+export {
+  DEFAULT_RATE_LIMIT_FLOOR,
+  paginate,
+  readPaged,
+} from "./pagination/paginate.js";
+export type {
+  AscPageResult,
+  CollectedRead,
+  PaginateOptions,
+  ReadScope,
+} from "./pagination/paginate.js";
+export type {
+  AscPagedDocument,
+  PagedGetPath,
+  PageItemOf,
+  PageOf,
+} from "./pagination/paged-types.js";
+
+export { getApp, listApps } from "./capabilities/apps.js";
+export type {
+  App,
+  AppResponse,
+  GetAppOptions,
+  ListAppsOptions,
+} from "./capabilities/apps.js";
+export { listAppStoreVersions } from "./capabilities/app-store-versions.js";
+export type {
+  AppStoreVersion,
+  ListAppStoreVersionsOptions,
+} from "./capabilities/app-store-versions.js";
 
 export type { components, operations, paths } from "./generated/asc-openapi.js";
