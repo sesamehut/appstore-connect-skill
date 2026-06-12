@@ -1,6 +1,6 @@
 # 生态调研：OpenAPI 代码生成与 Node 运行时栈
 
-数据采集时间：**2026-06-11**。版本号与维护状态来自 npm registry、GitHub 与官方文档的当日核对；工具生态变化快，引用前需要重新核实。本文是[架构总览](../architecture/overview.md)技术选型的证据存档。
+数据采集时间：**2026-06-11**（CLI 框架一节为 **2026-06-12**）。版本号与维护状态来自 npm registry、GitHub 与官方文档的当日核对；工具生态变化快，引用前需要重新核实。本文是[架构总览](../architecture/overview.md)技术选型的证据存档。
 
 ## OpenAPI → TypeScript 生成工具
 
@@ -46,9 +46,24 @@ ASC 规范已知坑：重名内联 enum 曾使部分生成器失败；大量 dep
 - node:test 的 runner 与快照已稳定，但 coverage、watch 仍为 experimental，module mock 需要 flag——测试密度高的项目摩擦明显。
 - HTTP 边界 mock：undici MockAgent 与原生 fetch 同源，可拦截全局 fetch 并断言未消费的拦截器；注意 devDependency 的 undici 主版本需与 Node 内置版本对齐。msw 适合需要跨场景复用 handler 时再引入；nock 已不是 fetch 时代的默认推荐。
 
+## CLI 框架
+
+数据采集时间：**2026-06-12**。Skill 入口层（M4）的单一 CLI + 子命令形态需要参数解析、子命令路由与自描述帮助；候选范围限定在轻量、ESM 友好、可被 tsdown 打进单文件的方案。
+
+| 候选 | 状态（2026-06） | 判断 |
+|---|---|---|
+| citty | 0.2.2（2026-04-01），**零运行时依赖**，ESM-only，周下载约 2200 万 | **选用**。0.2.0（2026-01）重写后底层即 `node:util.parseArgs`、移除 consola 依赖（安装体积 0.2.2 实测 34.6 KB）；声明式 `defineCommand`、嵌套与惰性子命令、自动 `--help`/`--version`，`runCommand`/`renderUsage` 可被自有驱动复用；UnJS 出品，nitropack 与 @nuxt/cli 均压在其关键路径上 |
+| commander | 15.0.0，零依赖，成熟 | 备选。命令式链式 API 与本仓库声明式函数风格不合，无惰性子命令加载 |
+| cleye | 2.6.0，2 个传递依赖 | 平铺命令模型，无嵌套子命令；供应链面大于 citty |
+| gunshi | 0.34.0，0.x 月度破坏性变更 | 类型质量好但 API 远未收敛 |
+| @stricli/core | 1.2.7，零依赖 | 可用但生态采用小，相对 citty 无增益 |
+| 手写 node:util.parseArgs | 核心 API 稳定 | 合法兜底，但要自行重写子命令路由与帮助渲染——恰是 citty 已在同一原语上提供的无差别机械 |
+
+citty 维护性核查结论：发版空窗（2024-02 → 2026-01）后 2026 年已连发三版（0.2.0/0.2.1/0.2.2），实质性提交 2025-03 即恢复；仓库未归档、无弃用公告、无后继者。风险为 npm 发布权集中于单一维护者（pi0）且无 1.0 路线图；缓解因素是 UnJS 组织背书、Nuxt/Nitro 生态依赖（坏版本会被立刻发现）以及 M8 打包后与上游发版节奏解耦。已知陷阱：0.2 的参数类型只有 `boolean | string | enum | positional`，**无 `number` 类型**（v0.2.0 release notes 中的相关条目与发布产物不符），数值 flag 需按 string 声明后自行校验。
+
 ## 后续复核点
 
-- openapi-fetch、tsdown 仍为 0.x，升级需钉版本并关注 changelog。
+- openapi-fetch、tsdown、citty 仍为 0.x，升级需钉版本并关注 changelog（citty 0.1→0.2 即有 ESM-only、解析语义等真破坏性变更）。
 - TypeScript 7 稳定版发布后评估切换。
 - Node 22 于 2027-04 EOL 时把基线提到 24。
 
@@ -63,4 +78,6 @@ ASC 规范已知坑：重名内联 enum 曾使部分生成器失败；大量 dep
 - Node 生命周期：<https://endoflife.date/nodejs>、<https://nodejs.org/en/blog/announcements/evolving-the-nodejs-release-schedule>
 - Vitest 4：<https://vitest.dev/blog/vitest-4>
 - tsup 弃维护声明：<https://github.com/egoist/tsup>；tsdown：<https://tsdown.dev/>
+- citty：<https://github.com/unjs/citty>、<https://github.com/unjs/citty/releases/tag/v0.2.0>、<https://registry.npmjs.org/citty>
+- CLI 框架对比基础数据：npm registry（commander / cleye / gunshi / @stricli/core 当日核对）
 - TypeScript 6.0 / 7 Beta：<https://devblogs.microsoft.com/typescript/announcing-typescript-6-0/>、<https://devblogs.microsoft.com/typescript/announcing-typescript-7-0-beta/>
