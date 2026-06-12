@@ -1,6 +1,6 @@
 # M2 认证与请求核心 — 阶段计划
 
-本文是 [Roadmap](roadmap.md) 中 M2 阶段的详细计划。目标：交付所有能力共用的认证与请求地基。策略依据为[认证实现策略](../implementation/authentication.md)与[请求模型与流程策略](../implementation/request-model.md)，Apple 行为核实于 **2026-06**。
+本文是 [Roadmap](../roadmap.md) 中 M2 阶段的详细计划。目标：交付所有能力共用的认证与请求地基。策略依据为[认证实现策略](../../implementation/authentication.md)与[请求模型与流程策略](../../implementation/request-model.md)，Apple 行为核实于 **2026-06**。
 
 ## 目标与退出标准
 
@@ -25,7 +25,7 @@
 
 ## 决策与理由
 
-技术选型（jose、openapi-fetch、undici MockAgent）的依据见[架构总览](../architecture/overview.md)，本阶段不重新论证；本节只记录 M2 范围内新做出的决策。
+技术选型（jose、openapi-fetch、undici MockAgent）的依据见[架构总览](../../architecture/overview.md)，本阶段不重新论证；本节只记录 M2 范围内新做出的决策。
 
 **双 key 形态一次到位。** 团队 key 与个人 key 在签发层只差 payload 声明（团队 key 用 Issuer ID，个人 key 用固定的用户主体声明），但凭据校验、错误提示与文档都要覆盖两套形态。经用户确认两者都支持：凭据模型显式区分两种形态，个人 key 在报表、Provisioning 等端点的能力差异不在认证层硬编码，而是留给错误反馈（权限错误提示中说明个人 key 的限制）与 M5 的任务级处理。
 
@@ -58,4 +58,4 @@
 - [x] 429/5xx/网络错误按退避策略重试且次数有上限；4xx（除 429）不重试；限流快照经观察者回调透传并出现在限流错误上。
 - [x] 查询参数按 ASC 逗号拼接形式序列化。
 - [x] `npm run check` 全绿；测试不含任何静态密钥或真实凭据。
-- [ ] 真实凭据冒烟通过：签名链路在真实 ASC 上验证（用户注入凭据，运行一次冒烟脚本）。
+- [x] 真实凭据冒烟通过：签名链路在真实 ASC 上验证（用户注入凭据，运行一次冒烟脚本）。

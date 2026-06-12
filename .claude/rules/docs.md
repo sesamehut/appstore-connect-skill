@@ -36,15 +36,15 @@ This file is the docs entry point and inventory.
 - `phases/` — Phase planning and milestone tracking
   - `roadmap.md` — Milestone roadmap from design stage to a distributable
     skill; owns per-milestone status
-  - `m2-auth-request-core.md` — Active M2 phase plan: authentication and
-    request core (credential model, token lifecycle, thin request layer,
-    error normalization, rate-limit passthrough)
   - `archive/` — Detailed phase plans move here once their phase completes
     - `m0-engineering-foundation.md` — Completed M0 phase plan: engineering
       foundation (toolchain, unified checks, CI)
     - `m1-api-contract-layer.md` — Completed M1 phase plan: API contract
       layer (spec acquisition, generation pipeline, integrity guard, drift
       detection)
+    - `m2-auth-request-core.md` — Completed M2 phase plan: authentication
+      and request core (credential model, token lifecycle, thin request
+      layer, error normalization, rate-limit passthrough)
 
 ## Rules
 
