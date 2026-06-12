@@ -16,8 +16,9 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
-    // The generated ASC contract (M1) is a huge d.ts-shaped boundary artifact;
-    // re-checking dependency declarations would dominate check time for no gain.
+    // Skips node_modules declaration files only. The generated ASC contract
+    // is a regular .ts module (so the build can emit it into dist) and stays
+    // fully checked.
     "skipLibCheck": true,
     "noEmit": true
   },

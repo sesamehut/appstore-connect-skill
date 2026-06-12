@@ -5,3 +5,6 @@ package-lock.json
 *.md
 # Tool-managed Claude Code workspace files.
 .claude/
+# Generated contract artifacts must stay byte-stable across Prettier
+# versions; the generation scripts own their canonical formatting.
+src/generated/

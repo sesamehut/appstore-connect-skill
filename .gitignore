@@ -18,6 +18,10 @@ coverage/
 /reports/
 .debug-output/
 
+# Local tool caches (downloaded ASC spec lives here; only its metadata is
+# committed, in src/generated/asc-openapi.manifest.json)
+.cache/
+
 # Editor / OS
 .DS_Store
 Thumbs.db
