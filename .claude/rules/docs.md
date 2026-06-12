@@ -36,9 +36,9 @@ This file is the docs entry point and inventory.
 - `phases/` — Phase planning and milestone tracking
   - `roadmap.md` — Milestone roadmap from design stage to a distributable
     skill; owns per-milestone status
-  - `m0-engineering-foundation.md` — Active M0 phase plan: engineering
-    foundation (toolchain, unified checks, CI)
   - `archive/` — Detailed phase plans move here once their phase completes
+    - `m0-engineering-foundation.md` — Completed M0 phase plan: engineering
+      foundation (toolchain, unified checks, CI)
 
 ## Rules
 
