@@ -176,8 +176,18 @@ export type {
   ListAnalyticsReportSegmentsOptions,
 } from "./capabilities/analytics-reports.js";
 
-export { ensureAnalyticsReportRequest } from "./workflows/analytics-reports.js";
-export type { EnsureAnalyticsReportRequestResult } from "./workflows/analytics-reports.js";
+export {
+  downloadAnalyticsInstance,
+  downloadAnalyticsReport,
+  ensureAnalyticsReportRequest,
+} from "./workflows/analytics-reports.js";
+export type {
+  AnalyticsInstanceDownload,
+  AnalyticsReportDownload,
+  AnalyticsReportSelector,
+  DownloadedAnalyticsSegment,
+  EnsureAnalyticsReportRequestResult,
+} from "./workflows/analytics-reports.js";
 
 export {
   analyticsSegmentFileName,

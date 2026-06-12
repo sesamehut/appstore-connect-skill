@@ -424,3 +424,225 @@ describe("reports finance download", () => {
     expect(captured.err[0]).toContain("YYYY-MM");
   });
 });
+
+describe("reports analytics list-reports", () => {
+  it("lists with the standard list envelope", async () => {
+    getAgent()
+      .get(ASC_API_BASE_URL)
+      .intercept({
+        path: (path) =>
+          path.startsWith("/v1/analyticsReportRequests/req-1/reports"),
+        method: "GET",
+      })
+      .reply(
+        200,
+        {
+          data: [
+            {
+              type: "analyticsReports",
+              id: "rep-1",
+              attributes: {
+                name: "App Downloads Standard",
+                category: "APP_USAGE",
+              },
+            },
+          ],
+          links: { self: `${ASC_API_BASE_URL}/v1/list` },
+        },
+        { headers: JSON_HEADERS },
+      );
+
+    const captured = makeIo();
+    const exit = await runCli(
+      ["reports", "analytics", "list-reports", "--request", "req-1"],
+      captured.io,
+      env,
+    );
+
+    expect(exit).toBe(0);
+    const envelope = JSON.parse(captured.out[0] ?? "") as {
+      command: string;
+      data: { id: string }[];
+      pagination: { scope: string };
+    };
+    expect(envelope.command).toBe("reports analytics list-reports");
+    expect(envelope.data[0]?.id).toBe("rep-1");
+    expect(envelope.pagination.scope).toBe("single-page");
+  });
+});
+
+describe("reports analytics download", () => {
+  let dir: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "asc-cli-analytics-"));
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("walks the chain, reports the resolved intermediates, and hides segment URLs", async () => {
+    const segmentCsv = "Date,Counts\n2026-06-11,7\n";
+    const listReply = (resources: unknown[]) =>
+      [
+        200,
+        { data: resources, links: { self: `${ASC_API_BASE_URL}/v1/list` } },
+        { headers: JSON_HEADERS },
+      ] as const;
+    const agent = () => getAgent().get(ASC_API_BASE_URL);
+    agent()
+      .intercept({
+        path: (path) =>
+          path.startsWith("/v1/apps/app-1/analyticsReportRequests"),
+        method: "GET",
+      })
+      .reply(
+        ...listReply([
+          {
+            type: "analyticsReportRequests",
+            id: "req-1",
+            attributes: {
+              accessType: "ONGOING",
+              stoppedDueToInactivity: false,
+            },
+          },
+        ]),
+      );
+    agent()
+      .intercept({
+        path: (path) =>
+          path.startsWith("/v1/analyticsReportRequests/req-1/reports"),
+        method: "GET",
+      })
+      .reply(
+        ...listReply([
+          {
+            type: "analyticsReports",
+            id: "rep-1",
+            attributes: {
+              name: "App Downloads Standard",
+              category: "APP_USAGE",
+            },
+          },
+        ]),
+      );
+    agent()
+      .intercept({
+        path: (path) => path.startsWith("/v1/analyticsReports/rep-1/instances"),
+        method: "GET",
+      })
+      .reply(
+        ...listReply([
+          {
+            type: "analyticsReportInstances",
+            id: "inst-1",
+            attributes: { granularity: "DAILY", processingDate: "2026-06-11" },
+          },
+        ]),
+      );
+    agent()
+      .intercept({
+        path: (path) =>
+          path.startsWith("/v1/analyticsReportInstances/inst-1/segments"),
+        method: "GET",
+      })
+      .reply(
+        ...listReply([
+          {
+            type: "analyticsReportSegments",
+            id: "seg-0",
+            attributes: {
+              url: "https://segments.example.test/seg/0?sig=do-not-echo",
+              checksum: "unrecognized",
+              sizeInBytes: segmentCsv.length,
+            },
+          },
+        ]),
+      );
+    getAgent()
+      .get("https://segments.example.test")
+      .intercept({ path: (path) => path.startsWith("/seg/0"), method: "GET" })
+      .reply(200, segmentCsv);
+    const outputDir = join(dir, "report");
+
+    const captured = makeIo();
+    const exit = await runCli(
+      [
+        "reports",
+        "analytics",
+        "download",
+        "--app",
+        "app-1",
+        "--name",
+        "App Downloads Standard",
+        "--output-dir",
+        outputDir,
+      ],
+      captured.io,
+      env,
+    );
+
+    expect(exit).toBe(0);
+    const raw = captured.out[0] ?? "";
+    const envelope = JSON.parse(raw) as {
+      command: string;
+      data: { directory: string; segments: { path: string; rows: number }[] };
+      resolved: Record<string, unknown>;
+    };
+    expect(envelope.command).toBe("reports analytics download");
+    expect(envelope.data.directory).toBe(outputDir);
+    expect(envelope.data.segments[0]).toMatchObject({
+      path: join(outputDir, "segment-000.csv"),
+      rows: 1,
+    });
+    expect(envelope.resolved).toMatchObject({
+      requestId: "req-1",
+      accessType: "ONGOING",
+      reportId: "rep-1",
+      reportName: "App Downloads Standard",
+      category: "APP_USAGE",
+      instanceId: "inst-1",
+      granularity: "DAILY",
+      processingDate: "2026-06-11",
+    });
+    // Short-lived signed URLs stay out of the envelope.
+    expect(raw).not.toContain("do-not-echo");
+    expect(raw).not.toContain("segments.example.test");
+    expect(await readFile(join(outputDir, "segment-000.csv"), "utf8")).toBe(
+      segmentCsv,
+    );
+  });
+
+  it("rejects mixing --instance with selector flags, before any request", async () => {
+    const captured = makeIo();
+    const exit = await runCli(
+      [
+        "reports",
+        "analytics",
+        "download",
+        "--instance",
+        "inst-1",
+        "--app",
+        "app-1",
+      ],
+      captured.io,
+      env,
+    );
+
+    expect(exit).toBe(64);
+    expect(captured.err[0]).toContain("--instance");
+  });
+
+  it("requires either --instance or --app with --name", async () => {
+    const captured = makeIo();
+    const exit = await runCli(
+      ["reports", "analytics", "download", "--app", "app-1"],
+      captured.io,
+      env,
+    );
+
+    expect(exit).toBe(64);
+    expect(captured.err[0]).toContain("--name");
+  });
+});

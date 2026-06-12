@@ -108,6 +108,17 @@ export function validateSalesReportDate(
   }
 }
 
+export function validateProcessingDate(date: string | undefined): void {
+  if (date === undefined) {
+    return;
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new CliUsageError(
+      `--date for an analytics instance must be YYYY-MM-DD (the processing date), got "${date}".`,
+    );
+  }
+}
+
 export function validateFinanceReportDate(date: string): void {
   if (!/^\d{4}-\d{2}$/.test(date)) {
     throw new CliUsageError(
