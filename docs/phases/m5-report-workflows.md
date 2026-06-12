@@ -58,7 +58,7 @@
 | 5 | WEEKLY 报表的周结日 | 待核实 |
 | 6 | stopped 请求共存时新建请求是否 409 | 待核实 |
 | 7 | 报表端点是否有独立于 3500/h 的更严配额 | 待核实 |
-| — | Analytics 报表请求创建记录（id、accessType、创建日期） | 待执行 |
+| — | Analytics 报表请求创建记录（id、accessType、创建日期） | 已执行（2026-06-13）：app `6761486081`，请求 id `e4bc99be-a9d9-4643-878b-7cf44067f829`，accessType `ONGOING`，`created: true`，无 stopped 旧请求；重跑 `ensure-request` 返回同一 id 且 `created: false`，幂等复用实机验证通过。首份数据预计 2026-06-14/15 生成 |
 
 ## 验证清单
 
