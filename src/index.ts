@@ -151,4 +151,32 @@ export type {
   ListCustomerReviewsOptions,
 } from "./capabilities/customer-reviews.js";
 
+export {
+  createAnalyticsReportRequest,
+  deleteAnalyticsReportRequest,
+  getAnalyticsReportRequest,
+  listAnalyticsReportInstances,
+  listAnalyticsReportRequests,
+  listAnalyticsReports,
+  listAnalyticsReportSegments,
+} from "./capabilities/analytics-reports.js";
+export type {
+  AnalyticsReport,
+  AnalyticsReportAccessType,
+  AnalyticsReportCategory,
+  AnalyticsReportGranularity,
+  AnalyticsReportInstance,
+  AnalyticsReportRequest,
+  AnalyticsReportRequestResponse,
+  AnalyticsReportSegment,
+  GetAnalyticsReportRequestOptions,
+  ListAnalyticsReportInstancesOptions,
+  ListAnalyticsReportRequestsOptions,
+  ListAnalyticsReportsOptions,
+  ListAnalyticsReportSegmentsOptions,
+} from "./capabilities/analytics-reports.js";
+
+export { ensureAnalyticsReportRequest } from "./workflows/analytics-reports.js";
+export type { EnsureAnalyticsReportRequestResult } from "./workflows/analytics-reports.js";
+
 export type { components, operations, paths } from "./generated/asc-openapi.js";

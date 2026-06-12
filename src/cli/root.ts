@@ -5,6 +5,7 @@ import { capabilitiesCommand } from "./commands/capabilities.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { metadataCommand } from "./commands/metadata.js";
 import { makePlannedCommand } from "./commands/planned.js";
+import { reportsCommand } from "./commands/reports.js";
 import { reviewsCommand } from "./commands/reviews.js";
 import { versionsCommand } from "./commands/versions.js";
 import { DOMAINS } from "./registry.js";
@@ -38,7 +39,7 @@ export const rootCommand = defineCommand({
     reviews: reviewsCommand,
     doctor: doctorCommand,
     capabilities: capabilitiesCommand,
-    reports: plannedDomain("reports"),
+    reports: reportsCommand,
     media: plannedDomain("media"),
     testflight: plannedDomain("testflight"),
   },

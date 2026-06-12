@@ -187,8 +187,9 @@ describe("error funnel", () => {
 });
 
 describe("planned and unsupported boundaries", () => {
+  // reports gained real verbs in M5; its in-flight sub-domain stubs are
+  // covered in cli-reports.test.ts instead.
   it.each([
-    ["reports", "M5"],
     ["media", "M6"],
     ["testflight", "M7"],
   ])(
