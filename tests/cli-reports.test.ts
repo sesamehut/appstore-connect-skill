@@ -9,7 +9,10 @@ import { runCli } from "../src/cli/main.js";
 import { ASC_API_BASE_URL } from "../src/http/client.js";
 import { ascItem, JSON_HEADERS } from "./helpers/asc-fixtures.js";
 import { useMockAgent } from "./helpers/mock-agent.js";
-import { SALES_SUMMARY_TSV } from "./helpers/report-fixtures.js";
+import {
+  FINANCE_REPORT_TSV,
+  SALES_SUMMARY_TSV,
+} from "./helpers/report-fixtures.js";
 import { makeTestKey } from "./helpers/test-credentials.js";
 
 const getAgent = useMockAgent();
@@ -333,17 +336,91 @@ describe("reports sales download", () => {
   });
 });
 
-describe("reports sub-domains still landing in M5", () => {
-  it("answers 'reports finance' with the planned-milestone stub", async () => {
+describe("reports finance download", () => {
+  let dir: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "asc-cli-finance-"));
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("lands the file and echoes the fiscal-month parameters", async () => {
+    getAgent()
+      .get(ASC_API_BASE_URL)
+      .intercept({
+        path: (path) => path.startsWith("/v1/financeReports"),
+        method: "GET",
+      })
+      .reply(200, gzipSync(FINANCE_REPORT_TSV), {
+        headers: { "content-type": "application/a-gzip" },
+      });
+    const output = join(dir, "finance.tsv");
+
     const captured = makeIo();
     const exit = await runCli(
-      ["reports", "finance", "download", "--whatever"],
+      [
+        "reports",
+        "finance",
+        "download",
+        "--region",
+        "ZZ",
+        "--date",
+        "2026-05",
+        "--output",
+        output,
+      ],
       captured.io,
-      env,
+      { ...env, ASC_VENDOR_NUMBER: "12345678" },
     );
 
-    expect(exit).toBe(5);
-    expect(captured.out).toEqual([]);
-    expect(captured.err[0]).toContain("M5");
+    expect(exit).toBe(0);
+    const envelope = JSON.parse(captured.out[0] ?? "") as {
+      command: string;
+      data: {
+        file: { path: string; rows: number };
+        report: { vendorNumber: string; regionCode: string };
+      };
+    };
+    expect(envelope.command).toBe("reports finance download");
+    expect(envelope.data.file).toMatchObject({ path: output, rows: 1 });
+    expect(envelope.data.report).toMatchObject({
+      vendorNumber: "...5678",
+      regionCode: "ZZ",
+    });
+    expect(await readFile(output, "utf8")).toBe(FINANCE_REPORT_TSV);
+  });
+
+  it("requires --region and --date via citty's validation", async () => {
+    const captured = makeIo();
+    const exit = await runCli(["reports", "finance", "download"], captured.io, {
+      ...env,
+      ASC_VENDOR_NUMBER: "12345678",
+    });
+
+    expect(exit).toBe(64);
+    expect(captured.err[0]).toContain("error[usage]:");
+  });
+
+  it("rejects a non-fiscal-month date as usage", async () => {
+    const captured = makeIo();
+    const exit = await runCli(
+      [
+        "reports",
+        "finance",
+        "download",
+        "--region",
+        "ZZ",
+        "--date",
+        "2026-05-01",
+      ],
+      captured.io,
+      { ...env, ASC_VENDOR_NUMBER: "12345678" },
+    );
+
+    expect(exit).toBe(64);
+    expect(captured.err[0]).toContain("YYYY-MM");
   });
 });

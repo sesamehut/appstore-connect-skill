@@ -206,4 +206,10 @@ export type {
   SalesReportType,
 } from "./workflows/sales-reports.js";
 
+export { downloadFinanceReport } from "./workflows/finance-reports.js";
+export type {
+  FinanceReportSpec,
+  FinanceReportType,
+} from "./workflows/finance-reports.js";
+
 export type { components, operations, paths } from "./generated/asc-openapi.js";

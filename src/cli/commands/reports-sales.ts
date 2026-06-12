@@ -1,11 +1,6 @@
 import { defineCommand } from "citty";
 
-import {
-  convertDelimitedReportToJson,
-  defaultSalesReportFileName,
-  jsonSiblingPath,
-} from "../../workflows/report-files.js";
-import type { SavedReportFile } from "../../workflows/report-files.js";
+import { defaultSalesReportFileName } from "../../workflows/report-files.js";
 import { downloadSalesReport } from "../../workflows/sales-reports.js";
 import type {
   SalesReportSubType,
@@ -20,24 +15,7 @@ import {
   resolveVendorNumber,
   validateSalesReportDate,
 } from "../report-flags.js";
-
-/**
- * The file summary plus the optional JSON conversion, shared by every report
- * download command's envelope.
- */
-export async function reportFileData(
-  saved: SavedReportFile,
-  format: "json" | undefined,
-): Promise<SavedReportFile & { readonly convertedJsonPath?: string }> {
-  if (format === undefined) {
-    return saved;
-  }
-  const converted = await convertDelimitedReportToJson(
-    saved.path,
-    jsonSiblingPath(saved.path),
-  );
-  return { ...saved, convertedJsonPath: converted.path };
-}
+import { reportFileData } from "../report-output.js";
 
 const downloadCommand = defineCommand({
   meta: {

@@ -12,6 +12,8 @@ import {
   AscNotFoundError,
   AscPermissionError,
 } from "../src/errors.js";
+import { downloadFinanceReport } from "../src/workflows/finance-reports.js";
+import type { FinanceReportSpec } from "../src/workflows/finance-reports.js";
 import { downloadSalesReport } from "../src/workflows/sales-reports.js";
 import type { SalesReportSpec } from "../src/workflows/sales-reports.js";
 import {
@@ -21,7 +23,10 @@ import {
   thrownBy,
 } from "./helpers/asc-fixtures.js";
 import { useMockAgent } from "./helpers/mock-agent.js";
-import { SALES_SUMMARY_TSV } from "./helpers/report-fixtures.js";
+import {
+  FINANCE_REPORT_TSV,
+  SALES_SUMMARY_TSV,
+} from "./helpers/report-fixtures.js";
 
 const GZIP_HEADERS = { "content-type": "application/a-gzip" };
 
@@ -50,7 +55,8 @@ const DAILY_SPEC: SalesReportSpec = {
   reportDate: "2026-06-10",
 };
 
-function mockSalesReports(
+function mockReportEndpoint(
+  endpoint: "/v1/salesReports" | "/v1/financeReports",
   reply:
     | { readonly status: 200; readonly body: Buffer | string }
     | { readonly status: number; readonly errorCode: string },
@@ -59,7 +65,7 @@ function mockSalesReports(
   const agent = getAgent().get(ASC_API_BASE_URL);
   const interceptor = agent.intercept({
     path: (path) => {
-      if (!path.startsWith("/v1/salesReports")) {
+      if (!path.startsWith(endpoint)) {
         return false;
       }
       capturedPath = path;
@@ -81,6 +87,12 @@ function mockSalesReports(
     );
   }
   return () => decodeURIComponent(capturedPath);
+}
+
+function mockSalesReports(
+  reply: Parameters<typeof mockReportEndpoint>[1],
+): () => string {
+  return mockReportEndpoint("/v1/salesReports", reply);
 }
 
 describe("downloadSalesReport", () => {
@@ -165,6 +177,70 @@ describe("downloadSalesReport", () => {
 
     const error = await thrownBy(
       downloadSalesReport(client, DAILY_SPEC, join(dir, "denied.tsv")),
+    );
+
+    expect(error).toBeInstanceOf(AscPermissionError);
+  });
+});
+
+const FINANCE_SPEC: FinanceReportSpec = {
+  vendorNumber: "12345678",
+  regionCode: "ZZ",
+  reportDate: "2026-05",
+  reportType: "FINANCIAL",
+};
+
+describe("downloadFinanceReport", () => {
+  it("sends the exact filters and lands the decompressed TSV", async () => {
+    const gz = gzipSync(FINANCE_REPORT_TSV);
+    const pathOf = mockReportEndpoint("/v1/financeReports", {
+      status: 200,
+      body: gz,
+    });
+    const filePath = join(dir, "finance.tsv");
+
+    const saved = await downloadFinanceReport(client, FINANCE_SPEC, filePath);
+
+    const path = pathOf();
+    expect(path).toContain("filter[regionCode]=ZZ");
+    expect(path).toContain("filter[reportDate]=2026-05");
+    expect(path).toContain("filter[reportType]=FINANCIAL");
+    expect(path).toContain("filter[vendorNumber]=12345678");
+    expect(await readFile(filePath, "utf8")).toBe(FINANCE_REPORT_TSV);
+    expect(saved).toMatchObject({
+      wasGzipped: true,
+      rows: 1,
+      delimiter: "tab",
+    });
+    expect(saved.headers).toContain("Partner Share");
+  });
+
+  it("enriches a 404 with fiscal-month guidance, masking the vendor number", async () => {
+    mockReportEndpoint("/v1/financeReports", {
+      status: 404,
+      errorCode: "NOT_FOUND",
+    });
+
+    const error = await thrownBy(
+      downloadFinanceReport(client, FINANCE_SPEC, join(dir, "missing.tsv")),
+    );
+
+    expect(error).toBeInstanceOf(AscNotFoundError);
+    expect(error.message).toContain("fiscal month 2026-05");
+    expect(error.message).toContain("ZZ");
+    expect(error.message).toContain("...5678");
+    expect(error.message).not.toContain("12345678");
+    expect(error.cause).toBeInstanceOf(AscNotFoundError);
+  });
+
+  it("lets the finance-role 403 pass through as a permission error", async () => {
+    mockReportEndpoint("/v1/financeReports", {
+      status: 403,
+      errorCode: "FORBIDDEN_ERROR",
+    });
+
+    const error = await thrownBy(
+      downloadFinanceReport(client, FINANCE_SPEC, join(dir, "denied.tsv")),
     );
 
     expect(error).toBeInstanceOf(AscPermissionError);
