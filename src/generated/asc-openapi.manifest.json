@@ -1,0 +1,22 @@
+{
+  "manifestVersion": 1,
+  "spec": {
+    "title": "App Store Connect API",
+    "version": "4.4",
+    "openapiVersion": "3.0.1",
+    "sourceUrl": "https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip",
+    "fetchedAt": "2026-06-12T03:18:17.171Z",
+    "sha256": "eb33a4909309c75c5f4a24e2a41db9bb18df02c4b2113c5b1d6e1eed4ce4c891"
+  },
+  "generator": {
+    "name": "openapi-typescript",
+    "version": "7.13.0",
+    "options": {
+      "alphabetize": true
+    }
+  },
+  "output": {
+    "file": "src/generated/asc-openapi.ts",
+    "sha256": "89166dce52a64b29999dd4182d1425efd84f8677467a1dd883d895012119f054"
+  }
+}
