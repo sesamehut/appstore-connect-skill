@@ -95,6 +95,10 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   typecheck, lint, format check, and tests - the same gate CI runs on every PR
   and push to main. Individual scripts: `typecheck`, `lint`, `format`,
   `format:check`, `test`, `test:watch`, `coverage`, `build`.
+- **Real-credential smoke** - `npm run smoke` builds `dist/` and makes one
+  minimal read against the real ASC API. It needs network plus `ASC_*` env
+  vars (key ID, optional issuer ID, private key inline or as a file path), so
+  it stays outside `check` and CI. Output contains no secrets.
 - **Generated contract changes** - regenerate with `npm run contract:update`
   (fetches the latest official Apple spec, regenerates `src/generated/`, and
   refreshes the metadata manifest). Generation is deterministic: re-running on
