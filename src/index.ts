@@ -179,4 +179,22 @@ export type {
 export { ensureAnalyticsReportRequest } from "./workflows/analytics-reports.js";
 export type { EnsureAnalyticsReportRequestResult } from "./workflows/analytics-reports.js";
 
+export {
+  analyticsSegmentFileName,
+  convertDelimitedReportToJson,
+  defaultAnalyticsReportDirName,
+  defaultFinanceReportFileName,
+  defaultSalesReportFileName,
+  downloadExternalFile,
+  isGzipMagic,
+  saveReportStream,
+} from "./workflows/report-files.js";
+export type {
+  ConvertedJsonReport,
+  DownloadExternalFileOptions,
+  ReportDelimiter,
+  SavedReportFile,
+  SaveReportStreamOptions,
+} from "./workflows/report-files.js";
+
 export type { components, operations, paths } from "./generated/asc-openapi.js";
