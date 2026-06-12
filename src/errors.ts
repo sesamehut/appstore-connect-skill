@@ -29,10 +29,19 @@ export interface AscRequestContext {
   readonly status?: number;
 }
 
+/** Progress at the moment a multi-page read stopped. */
+export interface AscPaginationProgress {
+  /** Pages successfully delivered before the stop. */
+  readonly pagesRead: number;
+  /** Items delivered across those pages. */
+  readonly itemsRead: number;
+}
+
 export interface AscErrorOptions {
   readonly apiErrors?: readonly AscApiErrorItem[];
   readonly rateLimit?: RateLimitSnapshot;
   readonly request?: AscRequestContext;
+  readonly pagination?: AscPaginationProgress;
   readonly cause?: unknown;
 }
 
@@ -47,6 +56,8 @@ export abstract class AscError extends Error {
   readonly apiErrors: readonly AscApiErrorItem[];
   readonly rateLimit?: RateLimitSnapshot;
   readonly request?: AscRequestContext;
+  /** Set when the failure happened during a multi-page read. */
+  readonly pagination?: AscPaginationProgress;
 
   constructor(message: string, options: AscErrorOptions = {}) {
     super(
@@ -60,6 +71,9 @@ export abstract class AscError extends Error {
     }
     if (options.request !== undefined) {
       this.request = options.request;
+    }
+    if (options.pagination !== undefined) {
+      this.pagination = options.pagination;
     }
   }
 }
@@ -108,6 +122,22 @@ export class AscInvalidParameterError extends AscError {
 /** 429 after the transport's retry budget. Carries the rate-limit snapshot. */
 export class AscRateLimitError extends AscError {
   readonly category = "rate-limit";
+}
+
+/**
+ * Proactive stop at the configured quota floor during a multi-page read,
+ * thrown before spending the next request — not an ASC 429. Subclassing
+ * AscRateLimitError keeps the "rate-limit" category contract intact while
+ * staying distinguishable from a real quota rejection.
+ */
+export class AscRateLimitFloorError extends AscRateLimitError {
+  /** The floor (remaining-requests threshold) that triggered the stop. */
+  readonly floor: number;
+
+  constructor(message: string, floor: number, options?: AscErrorOptions) {
+    super(message, options);
+    this.floor = floor;
+  }
 }
 
 /** 5xx or an unrecognized status: ASC-side failure, response context kept. */

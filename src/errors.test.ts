@@ -9,6 +9,7 @@ import {
   AscNotFoundError,
   AscPermissionError,
   AscRateLimitError,
+  AscRateLimitFloorError,
   AscUpstreamError,
 } from "./errors.js";
 import type { AscApiErrorItem } from "./errors.js";
@@ -21,6 +22,7 @@ describe("AscError hierarchy", () => {
     [new AscNotFoundError("m"), "not-found"],
     [new AscInvalidParameterError("m"), "invalid-parameter"],
     [new AscRateLimitError("m"), "rate-limit"],
+    [new AscRateLimitFloorError("m", 100), "rate-limit"],
     [new AscUpstreamError("m"), "upstream"],
     [new AscNetworkError("m", 3), "network"],
   ];
@@ -94,5 +96,27 @@ describe("AscError hierarchy", () => {
     const error = new AscRateLimitError("m", { rateLimit: snapshot });
 
     expect(error.rateLimit).toBe(snapshot);
+  });
+
+  it("attaches pagination progress when provided", () => {
+    const error = new AscPermissionError("m", {
+      pagination: { pagesRead: 2, itemsRead: 4 },
+    });
+
+    expect(error.pagination).toEqual({ pagesRead: 2, itemsRead: 4 });
+    expect(new AscPermissionError("m").pagination).toBeUndefined();
+  });
+
+  it("keeps the floor error within the rate-limit family", () => {
+    const error = new AscRateLimitFloorError("m", 100, {
+      pagination: { pagesRead: 1, itemsRead: 2 },
+      rateLimit: { remaining: 50, raw: "user-hour-rem:50" },
+    });
+
+    expect(error).toBeInstanceOf(AscRateLimitError);
+    expect(error.name).toBe("AscRateLimitFloorError");
+    expect(error.floor).toBe(100);
+    expect(error.rateLimit?.remaining).toBe(50);
+    expect(error.pagination?.pagesRead).toBe(1);
   });
 });
