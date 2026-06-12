@@ -1,8 +1,17 @@
 // Real-credential smoke check for the runtime layers: auth + request core
-// (M2), pagination + first read capabilities (M3), and the metadata/review
-// read surface (M4). Loads ASC_* credentials from the environment, performs
-// a handful of minimal reads against the real App Store Connect API, and
-// prints non-sensitive diagnostics only.
+// (M2), pagination + first read capabilities (M3), the metadata/review read
+// surface (M4), and the report download flows (M5). Loads ASC_* credentials
+// from the environment, performs a handful of minimal reads against the real
+// App Store Connect API, and prints non-sensitive diagnostics only.
+//
+// Setting ASC_VENDOR_NUMBER additionally smokes the sales and finance report
+// downloads into a temp directory (cleaned up afterwards); a missing report
+// or a finance-role 403 is a reported skip, not a failure — both exercise
+// the diagnostics on purpose. The analytics read-only chain runs whenever an
+// active report request exists and downloads at most one segment. Creating
+// or deleting analytics report requests is deliberately NOT smoked: creation
+// is one-time account setup (and starts Apple's 1-2 day first-data clock),
+// deletion discards accumulated reports.
 //
 // Setting ASC_SMOKE_WRITE=1 additionally exercises the write path: it
 // patches promotionalText on one version localization to a marker value,
@@ -21,12 +30,25 @@
 // Exit codes: 0 success, 2 credential/config error, 3 normalized ASC request
 // error, 1 unexpected failure.
 
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import {
   AscCredentialError,
   AscError,
+  AscNotFoundError,
+  AscPermissionError,
   createAscClient,
+  downloadExternalFile,
+  downloadFinanceReport,
+  downloadSalesReport,
   getApp,
   getAppStoreVersionLocalization,
+  listAnalyticsReportInstances,
+  listAnalyticsReportRequests,
+  listAnalyticsReports,
+  listAnalyticsReportSegments,
   listAppInfos,
   listApps,
   listAppStoreVersionLocalizations,
@@ -146,7 +168,10 @@ try {
     }`,
   );
 
-  // Step 7 — gated write roundtrip (see the header comment).
+  // Steps 7-9 — report downloads (M5), all read-only on the ASC side.
+  await runReportChecks(client, firstApp.id);
+
+  // Step 10 — gated write roundtrip (see the header comment).
   if (process.env.ASC_SMOKE_WRITE === "1") {
     await runWriteCheck(client, detail.data);
   } else {
@@ -180,6 +205,178 @@ try {
   }
   console.error("unexpected failure:", error);
   process.exit(1);
+}
+
+/**
+ * Sales, finance, and analytics report checks (M5), sharing one temp
+ * directory that always gets cleaned up. Every "no data" outcome is a
+ * reported skip: report availability depends on the account's history, not
+ * on this codebase.
+ *
+ * @param {import("../../dist/index.js").AscClient} client
+ * @param {string} appId
+ */
+async function runReportChecks(client, appId) {
+  const dir = await mkdtemp(join(tmpdir(), "asc-smoke-reports-"));
+  try {
+    const vendorNumber = process.env.ASC_VENDOR_NUMBER;
+    if (vendorNumber === undefined || vendorNumber === "") {
+      console.log(
+        "sales:       skipped (set ASC_VENDOR_NUMBER to smoke report downloads)",
+      );
+      console.log("finance:     skipped (ASC_VENDOR_NUMBER not set)");
+    } else {
+      await runSalesCheck(client, vendorNumber, dir);
+      await runFinanceCheck(client, vendorNumber, dir);
+    }
+    await runAnalyticsReadChain(client, appId, dir);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * @param {import("../../dist/index.js").AscClient} client
+ * @param {string} vendorNumber
+ * @param {string} dir
+ */
+async function runSalesCheck(client, vendorNumber, dir) {
+  // ~3 days back: recent enough to exist, old enough to be finalized.
+  const reportDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  try {
+    const saved = await downloadSalesReport(
+      client,
+      {
+        vendorNumber,
+        reportType: "SALES",
+        reportSubType: "SUMMARY",
+        frequency: "DAILY",
+        reportDate,
+      },
+      join(dir, "sales.tsv"),
+    );
+    console.log(
+      `sales:       ${reportDate} ok — ${saved.rows} row(s), ${saved.bytesWritten} byte(s), ` +
+        `${saved.wasGzipped ? "gzip" : "plain"} payload, ${saved.headers?.length ?? 0} column(s)`,
+    );
+  } catch (error) {
+    if (error instanceof AscNotFoundError) {
+      console.log(
+        `sales:       no ${reportDate} DAILY report (enriched 404 verified; often just no activity that day)`,
+      );
+      return;
+    }
+    throw error;
+  }
+}
+
+/**
+ * @param {import("../../dist/index.js").AscClient} client
+ * @param {string} vendorNumber
+ * @param {string} dir
+ */
+async function runFinanceCheck(client, vendorNumber, dir) {
+  // The previous calendar month approximates the latest closed fiscal month.
+  const now = new Date();
+  const previous = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1),
+  );
+  const reportDate = previous.toISOString().slice(0, 7);
+  try {
+    const saved = await downloadFinanceReport(
+      client,
+      { vendorNumber, regionCode: "ZZ", reportDate, reportType: "FINANCIAL" },
+      join(dir, "finance.tsv"),
+    );
+    console.log(
+      `finance:     ${reportDate} ZZ ok — ${saved.rows} row(s), ${saved.bytesWritten} byte(s)`,
+    );
+  } catch (error) {
+    if (error instanceof AscPermissionError) {
+      console.log(
+        "finance:     403 — this key lacks the finance role (the permission diagnostic itself is the verified behavior); skipped",
+      );
+      return;
+    }
+    if (error instanceof AscNotFoundError) {
+      console.log(
+        `finance:     no ${reportDate} report (fiscal month may not be closed yet; enriched 404 verified)`,
+      );
+      return;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Read-only analytics chain: requests → report catalog → first instance with
+ * segments → one segment downloaded with checksum verification. A long-term
+ * regression guard for the external-host download + MD5 path.
+ *
+ * @param {import("../../dist/index.js").AscClient} client
+ * @param {string} appId
+ * @param {string} dir
+ */
+async function runAnalyticsReadChain(client, appId, dir) {
+  const requests = await listAnalyticsReportRequests(client, appId, {
+    scope: "all-pages",
+  });
+  const active = requests.items.find(
+    (request) => request.attributes?.stoppedDueToInactivity !== true,
+  );
+  if (active === undefined) {
+    console.log(
+      "analytics:   no active report request (one-time setup: 'reports analytics ensure-request'); skipped",
+    );
+    return;
+  }
+  const reports = await listAnalyticsReports(client, active.id, {
+    scope: { maxItems: 5 },
+  });
+  console.log(
+    `analytics:   request ...${active.id.slice(-4)} [${active.attributes?.accessType ?? "?"}], ` +
+      `${reports.items.length} report(s) in the catalog${reports.truncated ? " (more exist)" : ""}`,
+  );
+
+  for (const report of reports.items) {
+    const instances = await listAnalyticsReportInstances(client, report.id, {
+      scope: { maxItems: 1 },
+    });
+    const instance = instances.items[0];
+    if (instance === undefined) {
+      continue;
+    }
+    const segments = await listAnalyticsReportSegments(client, instance.id, {
+      scope: "single-page",
+    });
+    const segment = segments.items[0];
+    const url = segment?.attributes?.url;
+    if (segment === undefined || url === undefined) {
+      continue;
+    }
+    const checksum = segment.attributes?.checksum ?? null;
+    const md5 =
+      checksum === null
+        ? undefined
+        : /^(?:md5:)?([0-9a-f]{32})$/i.exec(checksum.trim())?.[1];
+    const saved = await downloadExternalFile(
+      url,
+      join(dir, "segment-000.csv"),
+      { ...(md5 !== undefined && { expectedMd5: md5 }) },
+    );
+    console.log(
+      `analytics:   1 segment of "${report.attributes?.name ?? "?"}" ` +
+        `(${instance.attributes?.granularity ?? "?"} ${instance.attributes?.processingDate ?? "?"}) — ` +
+        `${saved.rows} row(s), ${saved.wasGzipped ? "gzip" : "plain"} payload, ` +
+        `checksum ${md5 !== undefined ? "verified (md5)" : `not enforced (declared: ${checksum ?? "absent"})`}`,
+    );
+    return;
+  }
+  console.log(
+    "analytics:   no instance with segments yet (first data appears 1-2 days after the request is created); segment download skipped",
+  );
 }
 
 /**

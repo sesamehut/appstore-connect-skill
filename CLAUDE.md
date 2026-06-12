@@ -100,7 +100,10 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   `ASC_*` env vars (key ID, optional issuer ID, private key inline or as a
   file path), so it stays outside `check` and CI. Output contains no secrets.
   Setting `ASC_SMOKE_WRITE=1` adds a write roundtrip (patch one
-  promotionalText, read back, restore).
+  promotionalText, read back, restore). Setting `ASC_VENDOR_NUMBER` adds
+  sales/finance report downloads (into a temp dir, cleaned up; a missing
+  report or finance-role 403 is a reported skip), and the analytics
+  read-only chain runs whenever an active report request exists.
 - **CLI** - the Skill entry CLI builds to `dist/cli/index.js`; run it during
   development with `node dist/cli/index.js <domain> <verb> [flags]` (e.g.
   `node dist/cli/index.js doctor` for the offline environment self-check).
