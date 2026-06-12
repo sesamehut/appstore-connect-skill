@@ -1,0 +1,26 @@
+name: Contract drift
+
+# Apple publishes only the latest ASC spec with no history: every week of
+# undetected drift is diff granularity lost for good. A failing run is the
+# signal to regenerate (`npm run contract:update`) and review the diff.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    # Drift detection has no OS or Node-version axis; one cheap runner is
+    # enough.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run contract:drift
