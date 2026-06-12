@@ -95,10 +95,20 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   typecheck, lint, format check, and tests - the same gate CI runs on every PR
   and push to main. Individual scripts: `typecheck`, `lint`, `format`,
   `format:check`, `test`, `test:watch`, `coverage`, `build`.
-- **Real-credential smoke** - `npm run smoke` builds `dist/` and makes one
-  minimal read against the real ASC API. It needs network plus `ASC_*` env
-  vars (key ID, optional issuer ID, private key inline or as a file path), so
-  it stays outside `check` and CI. Output contains no secrets.
+- **Real-credential smoke** - `npm run smoke` builds `dist/` and makes a
+  handful of minimal reads against the real ASC API. It needs network plus
+  `ASC_*` env vars (key ID, optional issuer ID, private key inline or as a
+  file path), so it stays outside `check` and CI. Output contains no secrets.
+  Setting `ASC_SMOKE_WRITE=1` adds a write roundtrip (patch one
+  promotionalText, read back, restore).
+- **CLI** - the Skill entry CLI builds to `dist/cli/index.js`; run it during
+  development with `node dist/cli/index.js <domain> <verb> [flags]` (e.g.
+  `node dist/cli/index.js doctor` for the offline environment self-check).
+  `npm run cli -- <args>` also works, but NOT from PowerShell: pwsh drops the
+  bare `--` when invoking `npm.cmd`, so npm silently swallows the flags as its
+  own config (quote it as `'--'` if you must). The project-level skill at
+  `.claude/skills/app-store-connect/SKILL.md` targets the repo's own `dist/`
+  build, so rebuild after CLI changes.
 - **Generated contract changes** - regenerate with `npm run contract:update`
   (fetches the latest official Apple spec, regenerates `src/generated/`, and
   refreshes the metadata manifest). Generation is deterministic: re-running on
