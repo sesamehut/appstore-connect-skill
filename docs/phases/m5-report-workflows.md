@@ -59,6 +59,7 @@
 | 6 | stopped 请求共存时新建请求是否 409 | 待核实 |
 | 7 | 报表端点是否有独立于 3500/h 的更严配额 | 待核实 |
 | — | Analytics 报表请求创建记录（id、accessType、创建日期） | 已执行（2026-06-13）：app `6761486081`，请求 id `e4bc99be-a9d9-4643-878b-7cf44067f829`，accessType `ONGOING`，`created: true`，无 stopped 旧请求；重跑 `ensure-request` 返回同一 id 且 `created: false`，幂等复用实机验证通过。首份数据预计 2026-06-14/15 生成 |
+| — | Analytics 链路实机观察（数据生成前，2026-06-13） | 报表**目录**在创建请求当日即可列出（约 80+ 个报表定义，含 "App Downloads Standard" id `r3-e4bc…`，category `COMMERCE`）；其实例列表为 0——1–2 天等待的是**实例**而非目录。一步直达 `download` 实机命中"无实例"分支，输出 1–2 天指引并以 exit 3 收尾，与离线测试一致 |
 
 ## 验证清单
 
