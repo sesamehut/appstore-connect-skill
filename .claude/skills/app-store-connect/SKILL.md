@@ -1,6 +1,6 @@
 ---
 name: app-store-connect
-description: Operates Apple App Store Connect through a bundled CLI. Lists apps and App Store versions; reads and updates store metadata and localizations (description, keywords, what's new, promotional text, app name, subtitle, privacy policy); adds new locales; reads customer reviews and posts or replaces developer responses. Use when the user asks about App Store Connect, ASC, app metadata, store listings, localization, customer reviews, review replies, TestFlight, App Store reports, or screenshots.
+description: Operates Apple App Store Connect through a bundled CLI. Lists apps and App Store versions; reads and updates store metadata and localizations (description, keywords, what's new, promotional text, app name, subtitle, privacy policy); adds new locales; reads customer reviews and posts or replaces developer responses; downloads sales, finance, and analytics reports to disk. Use when the user asks about App Store Connect, ASC, app metadata, store listings, localization, customer reviews, review replies, sales or download numbers, finance reports, analytics, TestFlight, App Store reports, or screenshots.
 compatibility: Requires Node.js >=22.12 and network access to api.appstoreconnect.apple.com. Runs in Claude Code on the user's machine.
 ---
 
@@ -20,11 +20,12 @@ doubt, ask the command itself.
 
 **Works now:** `apps` (list/get), `versions` (list), `metadata` (app-level and
 version-level localizations: list/get/update/add-locale), `reviews`
-(list/get/get-response/respond), `doctor`, `capabilities`.
+(list/get/get-response/respond), `reports` (sales/finance downloads, the
+analytics report lifecycle and downloads), `doctor`, `capabilities`.
 
 **Not implemented here yet** (the CLI answers these with exit code 5 and the
-planned milestone): `reports` (M5), `media` / screenshots (M6), `testflight`
-(M7). Tell the user the capability is planned, not that Apple lacks it.
+planned milestone): `media` / screenshots (M6), `testflight` (M7). Tell the
+user the capability is planned, not that Apple lacks it.
 
 **Not possible via Apple's API** (route the user to the App Store Connect
 website): editing or deleting customer reviews or star ratings, App Review /
@@ -44,8 +45,11 @@ repository, and never echo private key content.
 | `ASC_ISSUER_ID` | Issuer ID — set for team keys, omit for individual keys |
 | `ASC_PRIVATE_KEY` | The .p8 private key content, inline PEM |
 | `ASC_PRIVATE_KEY_PATH` | Path to the .p8 file (exactly one of the two key variables) |
+| `ASC_VENDOR_NUMBER` | Optional; needed for sales/finance report downloads (or pass `--vendor`) |
 
-Keys are created in App Store Connect → Users and Access → Integrations.
+Keys are created in App Store Connect → Users and Access → Integrations. The
+vendor number is shown in App Store Connect → Payments and Financial Reports;
+the API cannot read it.
 
 Build once after install or after CLI changes (paths are explicit so the
 working directory never matters):
@@ -104,6 +108,11 @@ Exit codes:
 | Read one review (with the reply) | `reviews get <reviewId> --include-response` |
 | Read the existing reply | `reviews get-response --review <reviewId>` |
 | Reply to a review (creates or replaces) | `reviews respond --review <reviewId> --body-file reply.txt` |
+| Download a day's sales report | `reports sales download --date 2026-06-10` |
+| Download a monthly finance report | `reports finance download --region ZZ --date 2026-05` |
+| Set up analytics reports (one-time) | `reports analytics ensure-request --app <appId>` |
+| See which analytics reports exist | `reports analytics list-reports --request <requestId>` |
+| Download an analytics report | `reports analytics download --app <appId> --name "App Downloads Standard"` |
 
 ## Conventions
 
@@ -121,3 +130,19 @@ Exit codes:
   A `STATE_ERROR` on exit 3 means the target was not editable.
 - `reviews respond` replaces any existing response and publishes
   asynchronously (state starts as `PENDING_PUBLISH`).
+- Report downloads write files to disk; the envelope's `data.file` (or
+  `data.segments` for analytics) carries the path, row count, and headers —
+  always relay the on-disk path to the user. `--format json` additionally
+  writes a JSON conversion next to the raw TSV/CSV.
+- The sales `--date` format follows `--frequency`: DAILY/WEEKLY use
+  YYYY-MM-DD (weekly = the week's closing date), MONTHLY uses YYYY-MM,
+  YEARLY uses YYYY; omit the date for the latest report. The finance `--date`
+  is Apple's FISCAL month (YYYY-MM), which shifts against the calendar.
+- Analytics reports need a one-time `ensure-request` per app; Apple generates
+  the first data 1-2 days later (the catalog of report names appears
+  immediately, dated instances follow). If `list-requests` shows
+  `stoppedDueToInactivity: true`, run `ensure-request` again — it creates a
+  fresh request and reports the stopped ones.
+- A sales/finance 404 usually means the report does not exist for that
+  date/frequency (timing or no activity), not a wrong id — the error message
+  carries the availability rules.

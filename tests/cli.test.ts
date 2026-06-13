@@ -217,8 +217,9 @@ describe("planned and unsupported boundaries", () => {
       unsupportedByAppleApi: { task: string; guidance: string }[];
     };
     expect(data.implemented.map((entry) => entry.name)).toContain("metadata");
+    expect(data.implemented.map((entry) => entry.name)).toContain("reports");
     expect(data.planned).toContainEqual(
-      expect.objectContaining({ name: "reports", milestone: "M5" }),
+      expect.objectContaining({ name: "media", milestone: "M6" }),
     );
     expect(data.unsupportedByAppleApi.length).toBeGreaterThan(0);
   });

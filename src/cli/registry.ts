@@ -53,7 +53,7 @@ export const DOMAINS: readonly DomainEntry[] = [
   {
     name: "reports",
     summary: "Sales, finance, and analytics report workflows",
-    status: { implemented: false, milestone: "M5" },
+    status: { implemented: true },
   },
   {
     name: "media",
