@@ -134,6 +134,11 @@ Exit codes:
   `data.segments` for analytics) carries the path, row count, and headers —
   always relay the on-disk path to the user. `--format json` additionally
   writes a JSON conversion next to the raw TSV/CSV.
+- Sales/finance `--output` is a single **file path**, not a folder; omit it to
+  auto-name the file in the working directory, or pass a full path to place it.
+  Analytics `download` instead takes `--output-dir` (a folder for its segment
+  files). To drop a sales/finance report into a specific folder, join your own
+  filename onto that folder for `--output`.
 - The sales `--date` format follows `--frequency`: DAILY/WEEKLY use
   YYYY-MM-DD (weekly = the week's closing date), MONTHLY uses YYYY-MM,
   YEARLY uses YYYY; omit the date for the latest report. The finance `--date`
