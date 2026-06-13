@@ -159,15 +159,23 @@ export class AscNetworkError extends AscError {
 }
 
 /**
- * Where a multi-step file flow failed. M5 carries the download side; M6 adds
- * "upload" and "commit" for the media asset flow.
+ * Where a multi-step file flow failed. The first five stages are the M5
+ * download side (fetch a report → land it on disk); the last four are the M6
+ * media upload side (read the local file → ranged PUT the bytes → commit with
+ * the checksum → Apple's async processing). The stage is the diagnosable
+ * discriminant within the file-processing category — "where did an interrupted
+ * flow stop" is an explicit M6 exit criterion.
  */
 export type FileProcessingStage =
   | "download"
   | "decompress"
   | "parse"
   | "checksum"
-  | "write";
+  | "write"
+  | "transfer-read"
+  | "transfer"
+  | "commit"
+  | "processing";
 
 /**
  * A report/media file flow failed outside the HTTP request itself (the

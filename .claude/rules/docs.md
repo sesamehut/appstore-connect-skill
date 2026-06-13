@@ -56,6 +56,11 @@ This file is the docs entry point and inventory.
       metadata and localization read/write capabilities, customer reviews
       and developer responses, and the minimal Skill entry (citty CLI +
       SKILL.md)
+    - `m6-media-workflows.md` — Completed M6 phase plan: screenshot and
+      preview upload chains (reserve/transfer/commit/confirm), the
+      deprecated-endpoint isolation strategy, the auth-free transfer
+      primitive, the upload-side file-processing stages, and the CLI `media`
+      domain
 
 ## Rules
 

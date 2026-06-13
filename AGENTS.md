@@ -103,7 +103,12 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   promotionalText, read back, restore). Setting `ASC_VENDOR_NUMBER` adds
   sales/finance report downloads (into a temp dir, cleaned up; a missing
   report or finance-role 403 is a reported skip), and the analytics
-  read-only chain runs whenever an active report request exists.
+  read-only chain runs whenever an active report request exists. Setting
+  `ASC_SMOKE_MEDIA=1` adds a screenshot upload-then-delete on an editable
+  (non-live) version: a runtime-generated PNG is reserved, transferred
+  (auth-free PUT), committed, status-read, then deleted (with the set if it
+  was created). A FAILED dimension check still verifies the mechanics; the
+  public listing is never touched and previews are not smoked.
 - **CLI** - the Skill entry CLI builds to `dist/cli/index.js`; run it during
   development with `node dist/cli/index.js <domain> <verb> [flags]` (e.g.
   `node dist/cli/index.js doctor` for the offline environment self-check).

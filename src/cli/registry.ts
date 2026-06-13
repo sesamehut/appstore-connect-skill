@@ -6,7 +6,7 @@
  * distinguishable — this registry is where that distinction lives in code.
  */
 
-export type PlannedMilestone = "M5" | "M6" | "M7";
+export type PlannedMilestone = "M7";
 
 export type DomainStatus =
   | { readonly implemented: true }
@@ -58,7 +58,7 @@ export const DOMAINS: readonly DomainEntry[] = [
   {
     name: "media",
     summary: "Screenshot and preview upload workflows",
-    status: { implemented: false, milestone: "M6" },
+    status: { implemented: true },
   },
   {
     name: "testflight",

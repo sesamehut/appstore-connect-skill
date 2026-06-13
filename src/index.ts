@@ -222,4 +222,88 @@ export type {
   FinanceReportType,
 } from "./workflows/finance-reports.js";
 
+export {
+  commitAppScreenshot,
+  createAppScreenshotSet,
+  deleteAppScreenshot,
+  deleteAppScreenshotSet,
+  getAppScreenshot,
+  listAppScreenshots,
+  listAppScreenshotSets,
+  reorderAppScreenshots,
+  reserveAppScreenshot,
+} from "./capabilities/app-screenshots.js";
+export type {
+  AppScreenshot,
+  AppScreenshotCreateAttributes,
+  AppScreenshotResponse,
+  AppScreenshotSet,
+  AppScreenshotSetResponse,
+  AppScreenshotUpdateAttributes,
+  ListAppScreenshotSetsOptions,
+  ListAppScreenshotsOptions,
+  ScreenshotDisplayType,
+} from "./capabilities/app-screenshots.js";
+
+export {
+  commitAppPreview,
+  createAppPreviewSet,
+  deleteAppPreview,
+  deleteAppPreviewSet,
+  getAppPreview,
+  listAppPreviews,
+  listAppPreviewSets,
+  reorderAppPreviews,
+  reserveAppPreview,
+} from "./capabilities/app-previews.js";
+export type {
+  AppPreview,
+  AppPreviewCreateAttributes,
+  AppPreviewResponse,
+  AppPreviewSet,
+  AppPreviewSetResponse,
+  AppPreviewUpdateAttributes,
+  ListAppPreviewSetsOptions,
+  ListAppPreviewsOptions,
+  PreviewType,
+} from "./capabilities/app-previews.js";
+
+export {
+  computeFileMd5,
+  readUploadFileMetadata,
+  uploadFileParts,
+} from "./workflows/media-files.js";
+export type {
+  MediaTransferResult,
+  UploadFileMetadata,
+  UploadFilePartsOptions,
+  UploadPartOperation,
+} from "./workflows/media-files.js";
+
+export {
+  ensurePreviewSet,
+  ensureScreenshotSet,
+  getPreviewStatus,
+  getScreenshotStatus,
+  inferPreviewMimeType,
+  resolveLocalization,
+  uploadPreview,
+  uploadPreviewSet,
+  uploadScreenshot,
+  uploadScreenshotSet,
+} from "./workflows/media-assets.js";
+export type {
+  EnsurePreviewSetResult,
+  EnsureScreenshotSetResult,
+  MediaAssetStatusResult,
+  MediaPollOptions,
+  MediaUploadOptions,
+  MediaUploadResult,
+  MediaUploadSetResult,
+  ResolvedLocalization,
+  UploadPreviewOptions,
+  UploadPreviewSetOptions,
+  UploadScreenshotSetOptions,
+} from "./workflows/media-assets.js";
+
 export type { components, operations, paths } from "./generated/asc-openapi.js";

@@ -128,6 +128,14 @@ const FILE_PROCESSING_HINTS: Record<FileProcessingStage, string> = {
     "The downloaded bytes do not match Apple's checksum. The corrupt file was kept with a .corrupt suffix for inspection; re-run to download again.",
   write:
     "Writing to disk failed. Check the --output path, directory permissions, and free space.",
+  "transfer-read":
+    "Could not read the local image/video file. Check the --file path exists, is readable, and did not change during the upload.",
+  transfer:
+    "Uploading the bytes to Apple's upload URL failed. Upload URLs are short-lived — re-run the command to reserve fresh upload operations. A dangling reserved asset can be removed with the matching delete command.",
+  commit:
+    "Apple rejected the upload commit, usually a checksum mismatch (the file changed during upload, or the wrong file was sent). Re-run the upload.",
+  processing:
+    "The bytes uploaded but Apple's asset processing reported FAILED — typically wrong dimensions, an unsupported format, or a bad video. The state errors above carry Apple's reason; fix the asset and re-run. The reserved asset can be removed with the matching delete command.",
 };
 
 function hintFor(error: AscError): string {

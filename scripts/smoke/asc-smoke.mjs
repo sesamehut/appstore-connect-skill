@@ -1,8 +1,9 @@
 // Real-credential smoke check for the runtime layers: auth + request core
 // (M2), pagination + first read capabilities (M3), the metadata/review read
-// surface (M4), and the report download flows (M5). Loads ASC_* credentials
-// from the environment, performs a handful of minimal reads against the real
-// App Store Connect API, and prints non-sensitive diagnostics only.
+// surface (M4), the report download flows (M5), and the media upload flow
+// (M6). Loads ASC_* credentials from the environment, performs a handful of
+// minimal reads against the real App Store Connect API, and prints
+// non-sensitive diagnostics only.
 //
 // Setting ASC_VENDOR_NUMBER additionally smokes the sales and finance report
 // downloads into a temp directory (cleaned up afterwards); a missing report
@@ -23,6 +24,17 @@
 // undone — offline body-assertion tests cover it; live verification is a
 // supervised agent task.
 //
+// Setting ASC_SMOKE_MEDIA=1 additionally exercises the media upload flow on a
+// throwaway screenshot: it generates a correctly-sized solid PNG at runtime,
+// reserves + transfers (auth-free PUT) + commits it into an editable version's
+// screenshot set, reads the processing status, and then deletes the asset (and
+// the set if this run created it). Only an EDITABLE (non-live) version is
+// touched, so the public store listing is never altered; if Apple's async
+// processing reports FAILED on the generated image's dimensions, the upload
+// mechanics are still verified and cleanup still runs. Previews are NOT smoked
+// (video transcode takes minutes). Output masks everything to the asset id's
+// last four characters plus state and byte counts — never the signed URL.
+//
 // Deliberately outside `npm run check` and CI: it needs network access and
 // real credentials, which never enter the repository. Run via `npm run smoke`
 // (which builds dist/ first).
@@ -30,9 +42,10 @@
 // Exit codes: 0 success, 2 credential/config error, 3 normalized ASC request
 // error, 1 unexpected failure.
 
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { deflateSync } from "node:zlib";
 
 import {
   AscCredentialError,
@@ -40,11 +53,15 @@ import {
   AscNotFoundError,
   AscPermissionError,
   createAscClient,
+  deleteAppScreenshot,
+  deleteAppScreenshotSet,
   downloadExternalFile,
   downloadFinanceReport,
   downloadSalesReport,
+  ensureScreenshotSet,
   getApp,
   getAppStoreVersionLocalization,
+  getScreenshotStatus,
   listAnalyticsReportInstances,
   listAnalyticsReportRequests,
   listAnalyticsReports,
@@ -56,10 +73,27 @@ import {
   listCustomerReviewsForApp,
   loadAscCredentialsFromEnv,
   updateAppStoreVersionLocalization,
+  uploadScreenshot,
 } from "../../dist/index.js";
 
 /** @type {import("../../dist/index.js").RateLimitSnapshot | undefined} */
 let lastSnapshot;
+
+// The PNG CRC table the media check needs. Declared here, above the top-level
+// `await` flow, because that flow can call solidColorPng (via runMediaCheck)
+// before module evaluation would otherwise reach a later `const` — a const
+// defined below the await would still be in its temporal dead zone at call time.
+const CRC32_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n += 1) {
+    let c = n;
+    for (let k = 0; k < 8; k += 1) {
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    }
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
 
 try {
   const credentials = await loadAscCredentialsFromEnv();
@@ -176,6 +210,13 @@ try {
     await runWriteCheck(client, detail.data);
   } else {
     console.log("write check: skipped (set ASC_SMOKE_WRITE=1 to enable)");
+  }
+
+  // Step 11 — gated media upload-then-delete (see the header comment).
+  if (process.env.ASC_SMOKE_MEDIA === "1") {
+    await runMediaCheck(client, detail.data);
+  } else {
+    console.log("media check: skipped (set ASC_SMOKE_MEDIA=1 to enable)");
   }
 
   if (lastSnapshot !== undefined) {
@@ -478,4 +519,157 @@ async function runWriteCheck(client, app) {
   if (checkError !== undefined) {
     throw checkError;
   }
+}
+
+/**
+ * Upload-then-delete one throwaway screenshot on an editable version, end to
+ * end: ensure the display-type set, reserve + transfer (auth-free PUT) +
+ * commit, read the processing status, then delete the asset (and the set if
+ * this run created it). `wait: false` on the upload keeps the asset id in hand
+ * for cleanup even when processing later reports FAILED; getScreenshotStatus
+ * reports a terminal FAILED without throwing, so a dimension rejection on the
+ * generated image is informational, not a smoke failure.
+ *
+ * @param {import("../../dist/index.js").AscClient} client
+ * @param {import("../../dist/index.js").App} app
+ */
+async function runMediaCheck(client, app) {
+  // Editable, non-live states only: a screenshot upload appends to the set,
+  // and the smoke must never touch the public store listing.
+  const editableStates = [
+    "PREPARE_FOR_SUBMISSION",
+    "METADATA_REJECTED",
+    "DEVELOPER_REJECTED",
+    "REJECTED",
+    "INVALID_BINARY",
+  ];
+  const versions = await listAppStoreVersions(client, app.id, {
+    scope: { maxItems: 20 },
+    fields: ["versionString", "appVersionState"],
+  });
+  const target = versions.items.find((version) =>
+    editableStates.includes(version.attributes?.appVersionState ?? ""),
+  );
+  if (target === undefined) {
+    console.log(
+      "media:       skipped (no version in an editable state; media smoke avoids the live listing)",
+    );
+    return;
+  }
+  const localizations = await listAppStoreVersionLocalizations(
+    client,
+    target.id,
+    { scope: "all-pages", fields: ["locale"] },
+  );
+  const localization =
+    localizations.items.find(
+      (item) => item.attributes?.locale === app.attributes?.primaryLocale,
+    ) ?? localizations.items[0];
+  if (localization === undefined) {
+    console.log(
+      "media:       skipped (the editable version has no localizations)",
+    );
+    return;
+  }
+
+  // 6.7" portrait. If Apple's specs drift, processing reports FAILED below and
+  // the run still verifies the reserve/transfer/commit mechanics and cleans up.
+  const displayType = "APP_IPHONE_67";
+  const ensured = await ensureScreenshotSet(
+    client,
+    localization.id,
+    displayType,
+  );
+  console.log(
+    `media:       set ...${ensured.set.id.slice(-4)} for ${displayType} (${ensured.created ? "created" : "reused"})`,
+  );
+
+  const dir = await mkdtemp(join(tmpdir(), "asc-smoke-media-"));
+  const file = join(dir, "smoke-shot.png");
+  await writeFile(file, solidColorPng(1290, 2796));
+
+  let assetId;
+  try {
+    const uploaded = await uploadScreenshot(client, ensured.set.id, file, {
+      wait: false,
+    });
+    assetId = uploaded.assetId;
+    console.log(
+      `media:       reserved+transferred+committed ...${assetId.slice(-4)} ` +
+        `(${uploaded.bytesTransferred} byte(s) over ${uploaded.operationCount} op(s), auth-free PUT)`,
+    );
+    const status = await getScreenshotStatus(client, assetId, {
+      wait: true,
+      pollIntervalMs: 2000,
+      pollTimeoutMs: 60000,
+    });
+    if (status.complete) {
+      console.log(
+        `media:       processing COMPLETE for ...${assetId.slice(-4)}`,
+      );
+    } else if (status.failed) {
+      console.log(
+        `media:       processing FAILED (content/dimension rejected; upload mechanics verified): ${status.finalState}`,
+      );
+    } else {
+      console.log(
+        `media:       still processing after timeout (mechanics verified); state: ${status.finalState}`,
+      );
+    }
+  } finally {
+    if (assetId !== undefined) {
+      await deleteAppScreenshot(client, assetId);
+      console.log(`media:       deleted screenshot ...${assetId.slice(-4)}`);
+    }
+    if (ensured.created) {
+      await deleteAppScreenshotSet(client, ensured.set.id);
+      console.log("media:       deleted the screenshot set this run created");
+    }
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+function crc32(buffer) {
+  let crc = 0xffffffff;
+  for (const byte of buffer) {
+    crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type, data) {
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(data.length, 0);
+  const typeAndData = Buffer.concat([Buffer.from(type, "ascii"), data]);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(typeAndData), 0);
+  return Buffer.concat([length, typeAndData, crc]);
+}
+
+/**
+ * Builds a minimal valid 8-bit RGB PNG of the given size, filled with black.
+ * Solid content deflates to a few kilobytes regardless of dimensions. Kept
+ * dependency-free (node:zlib only) so the smoke script needs no image library.
+ *
+ * @param {number} width
+ * @param {number} height
+ * @returns {Buffer}
+ */
+function solidColorPng(width, height) {
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 2; // color type 2 = truecolor RGB
+  // bytes 10-12 (compression, filter, interlace) stay 0.
+  // Each scanline is a leading filter byte (0 = none) then width RGB triples;
+  // an all-zero raw buffer is a black image.
+  const raw = Buffer.alloc(height * (1 + width * 3));
+  return Buffer.concat([
+    signature,
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", deflateSync(raw)),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
 }

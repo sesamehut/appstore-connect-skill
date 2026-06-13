@@ -187,12 +187,9 @@ describe("error funnel", () => {
 });
 
 describe("planned and unsupported boundaries", () => {
-  // reports gained real verbs in M5; its in-flight sub-domain stubs are
-  // covered in cli-reports.test.ts instead.
-  it.each([
-    ["media", "M6"],
-    ["testflight", "M7"],
-  ])(
+  // reports gained real verbs in M5 and media in M6; their command trees are
+  // covered in cli-reports.test.ts and cli-media.test.ts instead.
+  it.each([["testflight", "M7"]])(
     "answers '%s' with exit 5 naming milestone %s, even with trailing args",
     async (domain, milestone) => {
       const captured = makeIo();
@@ -218,8 +215,9 @@ describe("planned and unsupported boundaries", () => {
     };
     expect(data.implemented.map((entry) => entry.name)).toContain("metadata");
     expect(data.implemented.map((entry) => entry.name)).toContain("reports");
+    expect(data.implemented.map((entry) => entry.name)).toContain("media");
     expect(data.planned).toContainEqual(
-      expect.objectContaining({ name: "media", milestone: "M6" }),
+      expect.objectContaining({ name: "testflight", milestone: "M7" }),
     );
     expect(data.unsupportedByAppleApi.length).toBeGreaterThan(0);
   });

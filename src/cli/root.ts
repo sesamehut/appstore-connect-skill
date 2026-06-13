@@ -3,6 +3,7 @@ import { defineCommand } from "citty";
 import { appsCommand } from "./commands/apps.js";
 import { capabilitiesCommand } from "./commands/capabilities.js";
 import { doctorCommand } from "./commands/doctor.js";
+import { mediaCommand } from "./commands/media.js";
 import { metadataCommand } from "./commands/metadata.js";
 import { makePlannedCommand } from "./commands/planned.js";
 import { reportsCommand } from "./commands/reports.js";
@@ -40,7 +41,7 @@ export const rootCommand = defineCommand({
     doctor: doctorCommand,
     capabilities: capabilitiesCommand,
     reports: reportsCommand,
-    media: plannedDomain("media"),
+    media: mediaCommand,
     testflight: plannedDomain("testflight"),
   },
 });
