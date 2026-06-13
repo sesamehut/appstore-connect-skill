@@ -146,7 +146,7 @@ function hintFor(error: AscError): string {
     case "permission":
       return "The API key's role does not cover this operation. Ask the account holder to grant a broader role, or use a different key.";
     case "not-found":
-      return "Check the resource id — ids come from the corresponding list command. For review responses, not-found also means no response exists yet.";
+      return "Check the resource id — ids come from the corresponding list command. The message above distinguishes a wrong id from a resource that simply does not exist yet (e.g. no data for that date, no response, or no report instances).";
     case "invalid-parameter":
       return "ASC rejected the request shape; the [source: ...] pointer in the message locates the offending input. For metadata writes, a STATE_ERROR usually means the target version or app info is not in an editable state.";
     case "rate-limit":
