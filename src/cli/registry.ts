@@ -62,7 +62,19 @@ export const DOMAINS: readonly DomainEntry[] = [
   },
   {
     name: "testflight",
-    summary: "TestFlight groups, testers, and build distribution",
+    summary:
+      "TestFlight beta groups, testers, test info, beta review detail, and feedback",
+    status: { implemented: true },
+  },
+  {
+    name: "builds",
+    summary:
+      "Builds: list/get/latest/expire, beta detail, notes, beta review, group distribution, individual testers, pre-release versions",
+    status: { implemented: true },
+  },
+  {
+    name: "submission",
+    summary: "Prepare an App Store version for review and release",
     status: { implemented: false, milestone: "M7" },
   },
 ];

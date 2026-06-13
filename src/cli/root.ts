@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 
 import { appsCommand } from "./commands/apps.js";
+import { buildsCommand } from "./commands/builds.js";
 import { capabilitiesCommand } from "./commands/capabilities.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { mediaCommand } from "./commands/media.js";
@@ -8,6 +9,7 @@ import { metadataCommand } from "./commands/metadata.js";
 import { makePlannedCommand } from "./commands/planned.js";
 import { reportsCommand } from "./commands/reports.js";
 import { reviewsCommand } from "./commands/reviews.js";
+import { testflightCommand } from "./commands/testflight.js";
 import { versionsCommand } from "./commands/versions.js";
 import { DOMAINS } from "./registry.js";
 
@@ -42,6 +44,8 @@ export const rootCommand = defineCommand({
     capabilities: capabilitiesCommand,
     reports: reportsCommand,
     media: mediaCommand,
-    testflight: plannedDomain("testflight"),
+    testflight: testflightCommand,
+    builds: buildsCommand,
+    submission: plannedDomain("submission"),
   },
 });

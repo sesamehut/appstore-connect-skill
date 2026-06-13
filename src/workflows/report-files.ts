@@ -495,6 +495,130 @@ export async function downloadExternalFile(
   });
 }
 
+/** What landed on disk after a binary asset download (no rows/checksum). */
+export interface SavedBinaryFile {
+  readonly path: string;
+  /** Bytes written to disk, as transferred (binary assets are not decoded). */
+  readonly bytesWritten: number;
+}
+
+/**
+ * Lands a binary asset stream on disk through the same single-pipeline,
+ * never-buffer discipline as saveReportStream, but WITHOUT the gzip sniff,
+ * line/row observer, or checksum stage. Feedback screenshots have no rows to
+ * count and carry no Apple checksum, so those stages are intentionally not
+ * exercised here (a documented divergence from the analytics segment path).
+ * A failed pipeline leaves nothing half-written behind.
+ */
+export async function saveBinaryStream(
+  source: AsyncIterable<Uint8Array>,
+  filePath: string,
+  options: { readonly sourceTarget?: string } = {},
+): Promise<SavedBinaryFile> {
+  let bytesWritten = 0;
+  async function* counted(): AsyncGenerator<Uint8Array> {
+    try {
+      for await (const chunk of source) {
+        bytesWritten += chunk.length;
+        yield chunk;
+      }
+    } catch (error) {
+      throw downloadFailure(error, options.sourceTarget);
+    }
+  }
+
+  const writeStream = createWriteStream(filePath);
+  // Same attribution caveat as saveReportStream: a failing pipeline re-emits the
+  // origin error on the streams it destroys, so a write failure is only counted
+  // when the write stream emitted the error first.
+  let failedStage: "write" | undefined;
+  writeStream.on("error", () => {
+    failedStage ??= "write";
+  });
+
+  try {
+    await pipeline(counted(), writeStream);
+  } catch (error) {
+    await finished(writeStream).catch(() => undefined);
+    await unlink(filePath).catch(() => undefined);
+    if (error instanceof AscFileProcessingError) {
+      throw error;
+    }
+    if (failedStage === "write") {
+      throw new AscFileProcessingError(
+        `Writing the asset file failed: ${messageOf(error)}`,
+        "write",
+        { target: filePath, cause: error },
+      );
+    }
+    throw downloadFailure(error, options.sourceTarget);
+  }
+  return { path: filePath, bytesWritten };
+}
+
+/** Origin + path of a URL, dropping its (secret) signed query, for diagnostics. */
+function sanitizeDownloadUrl(url: string): string {
+  const parsed = new URL(url);
+  return parsed.origin + parsed.pathname;
+}
+
+/**
+ * Fetches a binary asset (a feedback screenshot's signed CDN URL) and lands it
+ * on disk. Shares the auth-free retrying fetch, de-query target sanitize, and
+ * partial-file cleanup with downloadExternalFile, but routes through
+ * saveBinaryStream (no gzip/line/checksum work). The Bearer token must never
+ * leak to the external host — only the de-queried URL is ever surfaced.
+ */
+export async function downloadExternalBinaryFile(
+  url: string,
+  filePath: string,
+  options: { readonly retry?: RetryOptions } = {},
+): Promise<SavedBinaryFile> {
+  let target: string;
+  try {
+    target = sanitizeDownloadUrl(url);
+  } catch (error) {
+    throw new AscFileProcessingError(
+      "Asset download failed: the asset URL is not a valid URL",
+      "download",
+      { cause: error },
+    );
+  }
+
+  const transport = createRetryingFetch(
+    options.retry === undefined ? {} : { retry: options.retry },
+  );
+  let response: Response;
+  try {
+    response = await transport(new Request(url));
+  } catch (error) {
+    throw new AscFileProcessingError(
+      `Downloading ${target} failed: ${messageOf(error)}`,
+      "download",
+      { target, cause: error },
+    );
+  }
+  if (!response.ok) {
+    await response.body?.cancel().catch(() => undefined);
+    throw new AscFileProcessingError(
+      `Downloading ${target} failed with HTTP ${String(response.status)}`,
+      "download",
+      {
+        target,
+        request: { method: "GET", url: target, status: response.status },
+      },
+    );
+  }
+  if (response.body === null) {
+    throw new AscFileProcessingError(
+      `Downloading ${target} returned no body`,
+      "download",
+      { target },
+    );
+  }
+  return saveBinaryStream(response.body, filePath, { sourceTarget: target });
+}
+
 /** `sales-<TYPE>-<SUBTYPE>-<FREQ>-<date|latest>.tsv` */
 export function defaultSalesReportFileName(spec: {
   readonly reportType: string;

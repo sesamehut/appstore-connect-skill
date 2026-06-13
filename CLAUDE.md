@@ -108,7 +108,16 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   (non-live) version: a runtime-generated PNG is reserved, transferred
   (auth-free PUT), committed, status-read, then deleted (with the set if it
   was created). A FAILED dimension check still verifies the mechanics; the
-  public listing is never touched and previews are not smoked.
+  public listing is never touched and previews are not smoked. Setting
+  `ASC_SMOKE_TESTFLIGHT=1` adds a TestFlight pass of reversible / read-only
+  steps only: it reads beta groups, builds, and crash/screenshot feedback
+  (counts/metadata only — no PII, no signed URLs), then creates one empty beta
+  group with a unique smoke name and deletes it in a finally (cleaning up only
+  the group this run created; an empty group emails no invitations). Missing
+  data or an insufficient role is a reported skip. High-side-effect writes are
+  NEVER smoked: adding a tester emails real invitations, submitting a build for
+  beta review triggers a real immutable Apple review, and expiring a build is
+  irreversible.
 - **CLI** - the Skill entry CLI builds to `dist/cli/index.js`; run it during
   development with `node dist/cli/index.js <domain> <verb> [flags]` (e.g.
   `node dist/cli/index.js doctor` for the offline environment self-check).

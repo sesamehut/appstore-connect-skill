@@ -22,7 +22,7 @@
 | M4 | 元数据与评论能力、最小 Skill 入口 | 资源读写能力面与 Skill 雏形 | 已完成（[阶段计划](archive/m4-metadata-reviews-skill-entry.md)） |
 | M5 | 报表工作流 | 销售/财务/分析报表下载链路 | 进行中（[阶段计划](m5-report-workflows.md)） |
 | M6 | 媒体素材工作流 | 截图与预览上传链路 | 已完成（[阶段计划](archive/m6-media-workflows.md)） |
-| M7 | TestFlight 与送审准备 | 首期范围能力闭环 | 未开始 |
+| M7 | TestFlight 与送审准备 | 首期范围能力闭环 | 进行中（TestFlight 部分已完成；送审准备待办，[阶段计划](m7-testflight.md)） |
 | M8 | Skill 完备化与发布 | 任务级能力打磨、打包与使用文档 | 未开始 |
 | M9+ | 扩展与持续事项 | 商业化/营销能力、契约升级、生态复核 | 按需 |
 
@@ -135,11 +135,14 @@
 
 **范围**：任务组织与描述打磨、输入校验、用户可读反馈的统一口径、使用文档（配置与凭据说明）、分发打包（单文件 CLI 产物与 plugin/marketplace 形式，见 [Skill 入口与 CLI 策略](../implementation/skill-interface.md)的运行环境保障）。
 
+**分发形态**：对外按官方 plugin 布局打包（清单 + `skills/` + 自带单文件 CLI，由 `${CLAUDE_PLUGIN_ROOT}` 寻址），经 marketplace 以独立 plugin 仓库分发，与既有 sesamehut marketplace 约定一致；不把开发仓库本身当 plugin。开发态项目级 skill 与分发态 plugin skill 并存，SKILL.md 内容保持单一来源以防漂移。官方无安装钩子，故"零安装步骤"完全依赖单文件 bundle。
+
 **退出标准**：
 
 - 新用户按文档可以从零完成配置并跑通一个真实任务。
 - Skill 描述准确反映能力边界，agent 不会被误导去调用不存在的能力。
 - 分发包安装后无需执行任何依赖安装步骤即可运行，环境前提仅为 Node。
+- 经 marketplace 安装的 plugin 与开发态项目级 skill 行为一致。
 
 ## M9+ 扩展与持续事项
 

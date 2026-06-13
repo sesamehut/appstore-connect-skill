@@ -39,6 +39,10 @@ This file is the docs entry point and inventory.
   - `m5-report-workflows.md` — Active M5 phase plan: sales/finance report
     downloads, the analytics report async chain, the file-processing error
     family, and the CLI `reports` domain
+  - `m7-testflight.md` — Active M7 phase plan (TestFlight portion): beta
+    groups and testers, build distribution visibility, beta build/app
+    localizations, beta review detail + submission, feedback listing and the
+    attachment download workflow, and the CLI `testflight` / `builds` domains
   - `archive/` — Detailed phase plans move here once their phase completes
     - `m0-engineering-foundation.md` — Completed M0 phase plan: engineering
       foundation (toolchain, unified checks, CI)

@@ -35,6 +35,17 @@
 // (video transcode takes minutes). Output masks everything to the asset id's
 // last four characters plus state and byte counts — never the signed URL.
 //
+// Setting ASC_SMOKE_TESTFLIGHT=1 additionally exercises the TestFlight surface
+// with REVERSIBLE / read-only steps only: it creates one empty beta group with
+// a unique smoke name and deletes it in a finally block (cleaning up only the
+// group this run created), reads beta groups, builds, and the crash/screenshot
+// feedback collections (counts/metadata only — no PII downloaded, no signed
+// URLs touched). Missing data or an insufficient role is a reported skip, not a
+// failure (mirroring the report/media skip idiom). HIGH-SIDE-EFFECT writes are
+// NEVER smoked: adding a tester emails real invitations, submitting a build for
+// beta review triggers a real immutable Apple review, and expiring a build is
+// irreversible — those have offline tests plus a one-time supervised walkthrough.
+//
 // Deliberately outside `npm run check` and CI: it needs network access and
 // real credentials, which never enter the repository. Run via `npm run smoke`
 // (which builds dist/ first).
@@ -53,8 +64,10 @@ import {
   AscNotFoundError,
   AscPermissionError,
   createAscClient,
+  createBetaGroup,
   deleteAppScreenshot,
   deleteAppScreenshotSet,
+  deleteBetaGroup,
   downloadExternalFile,
   downloadFinanceReport,
   downloadSalesReport,
@@ -70,7 +83,12 @@ import {
   listApps,
   listAppStoreVersionLocalizations,
   listAppStoreVersions,
+  listBetaGroups,
+  listBuilds,
+  listCrashFeedback,
   listCustomerReviewsForApp,
+  listGroupTesters,
+  listScreenshotFeedback,
   loadAscCredentialsFromEnv,
   updateAppStoreVersionLocalization,
   uploadScreenshot,
@@ -217,6 +235,15 @@ try {
     await runMediaCheck(client, detail.data);
   } else {
     console.log("media check: skipped (set ASC_SMOKE_MEDIA=1 to enable)");
+  }
+
+  // Step 12 — gated TestFlight reversible/read-only check (see header comment).
+  if (process.env.ASC_SMOKE_TESTFLIGHT === "1") {
+    await runTestflightCheck(client, firstApp.id);
+  } else {
+    console.log(
+      "testflight:  skipped (set ASC_SMOKE_TESTFLIGHT=1 to enable read-only + create/delete-group steps)",
+    );
   }
 
   if (lastSnapshot !== undefined) {
@@ -626,6 +653,97 @@ async function runMediaCheck(client, app) {
       console.log("media:       deleted the screenshot set this run created");
     }
     await rm(dir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * TestFlight reversible / read-only smoke. Every step is either a pure read or
+ * a create-then-delete that cleans up only what this run created. HIGH-SIDE-
+ * EFFECT writes (add tester → real invitation email, submit beta review → real
+ * immutable Apple review, expire build → irreversible) are NEVER smoked here.
+ *
+ * @param {import("../../dist/index.js").AscClient} client
+ * @param {string} appId
+ */
+async function runTestflightCheck(client, appId) {
+  // Read the existing groups (read-only).
+  const groups = await listBetaGroups(client, {
+    scope: { maxItems: 5 },
+    app: [appId],
+  });
+  console.log(
+    `testflight:  ${groups.items.length} beta group(s) read${groups.truncated ? " (more exist)" : ""}`,
+  );
+
+  // If a group exists, read its membership (read-only).
+  const firstGroup = groups.items[0];
+  if (firstGroup !== undefined) {
+    const members = await listGroupTesters(client, firstGroup.id, {
+      scope: { maxItems: 1 },
+    });
+    console.log(
+      `testflight:  group ...${firstGroup.id.slice(-4)} membership read (${members.items.length === 0 ? "empty page" : "has members"})`,
+    );
+  }
+
+  // Read builds (read-only).
+  const builds = await listBuilds(client, {
+    scope: { maxItems: 3 },
+    app: [appId],
+  });
+  console.log(
+    `testflight:  ${builds.items.length} build(s) read${builds.truncated ? " (more exist)" : ""}`,
+  );
+
+  // Read feedback collections — counts/metadata only, never downloading PII.
+  // An insufficient role (live-verify #19) is a reported skip, not a failure.
+  try {
+    const crashes = await listCrashFeedback(client, appId, {
+      scope: { maxItems: 1 },
+    });
+    const shots = await listScreenshotFeedback(client, appId, {
+      scope: { maxItems: 1 },
+    });
+    console.log(
+      `testflight:  feedback readable (crash: ${crashes.items.length === 0 ? "none on first page" : "present"}, ` +
+        `screenshot: ${shots.items.length === 0 ? "none on first page" : "present"}); no attachments downloaded`,
+    );
+  } catch (error) {
+    if (error instanceof AscPermissionError) {
+      console.log(
+        "testflight:  feedback 403 — this key lacks the TestFlight feedback role (permission diagnostic verified); skipped",
+      );
+    } else {
+      throw error;
+    }
+  }
+
+  // Reversible create-then-delete of one empty beta group. The group carries no
+  // testers, so creation has no email side effect; the finally block deletes
+  // only the group this run created.
+  const name = `asc-smoke ${new Date().toISOString()}`;
+  let createdGroupId;
+  try {
+    const created = await createBetaGroup(client, appId, { name });
+    createdGroupId = created.data.id;
+    console.log(
+      `testflight:  created empty beta group ...${createdGroupId.slice(-4)} (no testers → no invitations)`,
+    );
+  } catch (error) {
+    if (error instanceof AscPermissionError) {
+      console.log(
+        "testflight:  group create 403 — this key lacks the beta-group write role (permission diagnostic verified); skipped",
+      );
+      return;
+    }
+    throw error;
+  } finally {
+    if (createdGroupId !== undefined) {
+      await deleteBetaGroup(client, createdGroupId);
+      console.log(
+        `testflight:  deleted the smoke beta group ...${createdGroupId.slice(-4)} (delete accepted)`,
+      );
+    }
   }
 }
 

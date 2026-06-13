@@ -306,4 +306,189 @@ export type {
   UploadScreenshotSetOptions,
 } from "./workflows/media-assets.js";
 
+export {
+  addTestersToGroup,
+  checkRecruitmentCompatibleBuild,
+  clearRecruitmentCriteria,
+  createBetaGroup,
+  deleteBetaGroup,
+  getBetaGroup,
+  listBetaGroups,
+  listGroupBuilds,
+  listGroupTesters,
+  listRecruitmentCriterionOptions,
+  readRecruitmentCriteria,
+  removeTestersFromGroup,
+  setPublicLink,
+  setRecruitmentCriteria,
+  updateBetaGroup,
+} from "./capabilities/beta-groups.js";
+export type {
+  BetaGroup,
+  BetaGroupCreateAttributes,
+  BetaGroupResponse,
+  BetaGroupUpdateAttributes,
+  BetaRecruitmentCriterion,
+  BetaRecruitmentCriterionCompatibleBuildCheckResponse,
+  BetaRecruitmentCriterionOption,
+  BetaRecruitmentCriterionResponse,
+  DeviceFamily,
+  DeviceFamilyOsVersionFilter,
+  GetBetaGroupOptions,
+  ListBetaGroupsOptions,
+  ListGroupBuildsOptions,
+  ListGroupTestersOptions,
+  ListRecruitmentCriterionOptionsOptions,
+  ReadRecruitmentCriteriaOptions,
+} from "./capabilities/beta-groups.js";
+
+export {
+  createBetaTester,
+  deleteBetaTester,
+  getBetaTester,
+  listBetaTesters,
+  removeTesterFromApp,
+} from "./capabilities/beta-testers.js";
+export type {
+  BetaInviteType,
+  BetaTesterCreateAttributes,
+  BetaTesterResponse,
+  GetBetaTesterOptions,
+  ListBetaTestersOptions,
+} from "./capabilities/beta-testers.js";
+
+export {
+  addIndividualTesters,
+  assignBuildToBetaGroups,
+  expireBuild,
+  findLatestProcessedBuild,
+  getBuild,
+  getBuildBetaDetail,
+  listBuildIndividualTesters,
+  listBuilds,
+  listPreReleaseVersionBuilds,
+  listPreReleaseVersions,
+  getPreReleaseVersion,
+  removeBuildFromBetaGroups,
+  removeIndividualTesters,
+  updateBuildBetaDetail,
+} from "./capabilities/builds.js";
+export type {
+  Build,
+  BuildAudienceType,
+  BuildBetaDetail,
+  BuildBetaDetailResponse,
+  BuildBetaDetailUpdateAttributes,
+  BuildPlatform,
+  BuildProcessingState,
+  BuildResponse,
+  FindLatestProcessedBuildOptions,
+  GetBuildOptions,
+  ListBuildIndividualTestersOptions,
+  ListBuildsOptions,
+  ListPreReleaseVersionBuildsOptions,
+  ListPreReleaseVersionsOptions,
+  PrereleaseVersion,
+  PrereleaseVersionResponse,
+} from "./capabilities/builds.js";
+
+export {
+  createBetaAppLocalization,
+  createBetaBuildLocalization,
+  deleteBetaAppLocalization,
+  deleteBetaBuildLocalization,
+  listBetaAppLocalizations,
+  listBetaBuildLocalizations,
+  updateBetaAppLocalization,
+  updateBetaBuildLocalization,
+} from "./capabilities/beta-localizations.js";
+export type {
+  BetaAppLocalization,
+  BetaAppLocalizationCreateAttributes,
+  BetaAppLocalizationResponse,
+  BetaAppLocalizationUpdateAttributes,
+  BetaBuildLocalization,
+  BetaBuildLocalizationCreateAttributes,
+  BetaBuildLocalizationResponse,
+  BetaBuildLocalizationUpdateAttributes,
+  ListBetaAppLocalizationsOptions,
+  ListBetaBuildLocalizationsOptions,
+} from "./capabilities/beta-localizations.js";
+
+export {
+  getBetaAppReviewDetail,
+  getBetaAppReviewSubmission,
+  getBuildBetaAppReviewSubmission,
+  listBetaAppReviewSubmissions,
+  submitBuildForBetaReview,
+  updateBetaAppReviewDetail,
+} from "./capabilities/beta-review.js";
+export type {
+  BetaAppReviewDetail,
+  BetaAppReviewDetailResponse,
+  BetaAppReviewDetailUpdateAttributes,
+  BetaAppReviewSubmission,
+  BetaAppReviewSubmissionResponse,
+  BetaReviewState,
+  GetBetaAppReviewDetailOptions,
+  ListBetaAppReviewSubmissionsOptions,
+} from "./capabilities/beta-review.js";
+
+export {
+  getCrashFeedback,
+  getCrashLog,
+  getScreenshotFeedback,
+  listCrashFeedback,
+  listScreenshotFeedback,
+} from "./capabilities/testflight-feedback.js";
+export type {
+  BetaCrashLog,
+  BetaCrashLogResponse,
+  BetaFeedbackCrashSubmission,
+  BetaFeedbackCrashSubmissionResponse,
+  BetaFeedbackScreenshotImage,
+  BetaFeedbackScreenshotSubmission,
+  BetaFeedbackScreenshotSubmissionResponse,
+  GetCrashFeedbackOptions,
+  GetScreenshotFeedbackOptions,
+  ListFeedbackOptions,
+} from "./capabilities/testflight-feedback.js";
+
+export {
+  downloadCrashFeedbackLog,
+  downloadFeedbackAttachments,
+  downloadScreenshotFeedbackAttachments,
+} from "./workflows/feedback-files.js";
+export type {
+  DownloadFeedbackAttachmentsOptions,
+  DownloadFeedbackTarget,
+  FeedbackDownloadItem,
+  FeedbackDownloadSummary,
+  FeedbackKind,
+  SavedCrashLogFile,
+  SavedScreenshotFile,
+} from "./workflows/feedback-files.js";
+
+export {
+  bulkAddTestersToGroup,
+  DEFAULT_LINKAGE_BATCH_SIZE,
+  ensureBetaGroup,
+  findBetaAppReviewDetail,
+  findRecruitmentCriterionId,
+  setBetaAppReviewDetail,
+  upsertBetaAppLocalization,
+  upsertBetaBuildLocalization,
+} from "./workflows/beta-distribution.js";
+export type {
+  BulkAddTestersResult,
+  EnsureBetaGroupResult,
+  UpsertLocalizationResult,
+} from "./workflows/beta-distribution.js";
+
+export {
+  downloadExternalBinaryFile,
+  saveBinaryStream,
+} from "./workflows/report-files.js";
+export type { SavedBinaryFile } from "./workflows/report-files.js";
+
 export type { components, operations, paths } from "./generated/asc-openapi.js";
