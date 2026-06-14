@@ -52,8 +52,8 @@
 | # | 核实项 | 结果 |
 |---|---|---|
 | 1 | 销售/财务 200 响应是否带 `Content-Encoding`（影响 undici 自动解压） | 已核实（2026-06-13）：销售 200 以 gzip 载荷传输，`wasGzipped: true`——undici 未自动解压（若带 `Content-Encoding: gzip` 则预解压、`wasGzipped` 应为 false），magic-byte 嗅探 + `node:zlib` gunzip 实机生效；落盘为 TSV（`delimiter: tab`）。压缩前字节做 MD5 的基准下游沿用 |
-| 2 | 分段 checksum 算法与基准（假定 MD5 over 压缩字节） | 待核实（需 Analytics 实例数据，预计 2026-06-14/15） |
-| 3 | 分段文件格式（CSV vs TSV、是否 gzip） | 待核实（需 Analytics 实例数据）；销售/财务报表已确认为 gzip 载荷的 TSV |
+| 2 | 分段 checksum 算法与基准（假定 MD5 over 压缩字节） | 已核实（2026-06-15）：实例数据生成后，"App Downloads Standard" DAILY 分段一步直达 `download` 全链路成功，`checksumVerified: true`（假定的 MD5 基准成立，无需修正）；分段 1 行、277 字节 |
+| 3 | 分段文件格式（CSV vs TSV、是否 gzip） | 已核实（2026-06-15）：分段落盘为 **TSV**（tab 分隔，与销售/财务一致），`--format json` 按 tab 正确切分还原对象。注意文件名仍为 `segment-000.csv` 而内容是 tab 分隔——扩展名与分隔符不一致，功能无误但命名可商榷 |
 | 4 | 各频率 `filter[reportDate]` 真实接受格式 | 已核实（2026-06-13）：DAILY=`YYYY-MM-DD`（2026-06-11/09 成功）、WEEKLY=`YYYY-MM-DD`（须周日，见 #5）、MONTHLY=`YYYY-MM`（2026-05 成功，29 行）。社区已知格式成立，校验表无需修正 |
 | 5 | WEEKLY 报表的周结日 | 已核实（2026-06-13）：**周日**。2026-05-31、06-07（周日）下载成功；周六（06-06、06-13）被 ASC 拒为 invalid-parameter「please specify the date of the Sunday ending the desired week」。ASC 自校验周结日，故本地只查格式、周结语义交 ASC/404 文案的决策成立 |
 | 6 | stopped 请求共存时新建请求是否 409 | 待核实（账号现无 stopped 请求，需自然进入 inactivity 后才能实测；复用/新建两分支均有离线测试兜底） |
@@ -72,6 +72,6 @@
 - [x] Analytics 全链路离线测试：ensure-request 三分支（复用/创建/stopped 新建）、报表名 0 命中与多命中反馈、分段下载不携带 authorization 头、checksum 不符 `.corrupt` 改名。
 - [x] CLI 信封与退出码路径（64=日期/vendor 用法错误；3=增强 404 与 file-processing）经进程内集成测试覆盖；`resolved` 块承载 Analytics 中间解析链。
 - [x] `npm run check` 全绿；生成契约零改动；零新增运行时依赖。
-- [~] 真实账号（2026-06-13）：销售报表 DAILY/WEEKLY/MONTHLY 下载成功（核实项 1/4/5 已记录）✅；财务报表路径已验证（key 具财务角色无 403、增强 404 正确），但账号零收入故无财报、成功终态不可演示；**Analytics 一步直达全链路成功（核实项 2/3）待实例数据生成（约 2026-06-14/15）**。
+- [x] 真实账号：销售报表 DAILY/WEEKLY/MONTHLY 下载成功（2026-06-13，核实项 1/4/5 已记录）✅；财务报表路径已验证（key 具财务角色无 403、增强 404 正确），但账号零收入故无财报、成功终态不可演示；**Analytics 一步直达全链路成功（2026-06-15，核实项 2/3）：实例数据生成后下载 "App Downloads Standard" DAILY 分段，`checksumVerified: true`、TSV→JSON 转换正确** ✅。
 - [x] `npm run smoke`（含报表只读步骤）在测试账号通过（2026-06-13）：销售 2026-06-10 实下成功（2 行、gzip、28 列），财务/Analytics 下载步骤按设计报告性跳过（无财报/无实例），`smoke check passed`。
-- [~] 通过 Claude Code 实际调用 Skill 完成"下载某天销售报表"（可做）与"下载某 Analytics 报表"（**待实例数据**）真实任务，信封 `resolved`/摘要与落盘文件核对一致。
+- [x] 通过 Claude Code 实际调用完成"下载某天销售报表"（监督式 subagent 走查，2026-06-13，见上表）与"下载某 Analytics 报表"（2026-06-15 经 CLI 全链路实跑，即 skill 的执行路径：resolve request→report→instance→segment）真实任务，信封 `resolved`/`segments` 与落盘文件核对一致。

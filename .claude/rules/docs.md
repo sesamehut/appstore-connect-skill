@@ -36,25 +36,7 @@ This file is the docs entry point and inventory.
 - `phases/` — Phase planning and milestone tracking
   - `roadmap.md` — Milestone roadmap from design stage to a distributable
     skill; owns per-milestone status
-  - `m5-report-workflows.md` — Active M5 phase plan: sales/finance report
-    downloads, the analytics report async chain, the file-processing error
-    family, and the CLI `reports` domain
-  - `m7-testflight.md` — Active M7 phase plan (TestFlight portion): beta
-    groups and testers, build distribution visibility, beta build/app
-    localizations, beta review detail + submission, feedback listing and the
-    attachment download workflow, and the CLI `testflight` / `builds` domains
-  - `m7-submission-release.md` — Active M7 phase plan (submission/release
-    portion): the read-only submission-readiness preflight, App Store review
-    detail, release configuration (releaseType / earliest date / build),
-    export-compliance boolean, the modern reviewSubmissions assembly + submit /
-    cancel workflow, manual release-to-public trigger, and the CLI `submission`
-    domain
-  - `m8-skill-packaging.md` — Active M8 phase plan: the esbuild single-file
-    zero-install bundle, the single-source SKILL.md template (skill:generate /
-    skill:verify), the `package:plugin` payload assembly with secret-scan, the
-    standalone plugin repo + marketplace entry, four-way version consistency,
-    the from-zero plugin README, the capability description / validation /
-    feedback audit, and the release steps with org-permission fallback
+  - `archive/` — Detailed phase plans move here once their phase completes
     - `m0-engineering-foundation.md` — Completed M0 phase plan: engineering
       foundation (toolchain, unified checks, CI)
     - `m1-api-contract-layer.md` — Completed M1 phase plan: API contract
@@ -71,11 +53,31 @@ This file is the docs entry point and inventory.
       metadata and localization read/write capabilities, customer reviews
       and developer responses, and the minimal Skill entry (citty CLI +
       SKILL.md)
+    - `m5-report-workflows.md` — Completed M5 phase plan: sales/finance
+      report downloads, the analytics report async chain, the file-processing
+      error family, and the CLI `reports` domain
     - `m6-media-workflows.md` — Completed M6 phase plan: screenshot and
       preview upload chains (reserve/transfer/commit/confirm), the
       deprecated-endpoint isolation strategy, the auth-free transfer
       primitive, the upload-side file-processing stages, and the CLI `media`
       domain
+    - `m7-testflight.md` — Completed M7 phase plan (TestFlight portion): beta
+      groups and testers, build distribution visibility, beta build/app
+      localizations, beta review detail + submission, feedback listing and the
+      attachment download workflow, and the CLI `testflight` / `builds` domains
+    - `m7-submission-release.md` — Completed M7 phase plan (submission/release
+      portion): the read-only submission-readiness preflight, App Store review
+      detail, release configuration (releaseType / earliest date / build),
+      export-compliance boolean, the modern reviewSubmissions assembly + submit
+      / cancel workflow, manual release-to-public trigger, and the CLI
+      `submission` domain
+    - `m8-skill-packaging.md` — Completed M8 phase plan: the esbuild
+      single-file zero-install bundle, the single-source SKILL.md template
+      (skill:generate / skill:verify), the `package:plugin` payload assembly
+      with secret-scan, the standalone plugin repo + marketplace entry,
+      four-way version consistency, the from-zero plugin README, the capability
+      description / validation / feedback audit, and the release steps with
+      org-permission fallback
 
 ## Rules
 
