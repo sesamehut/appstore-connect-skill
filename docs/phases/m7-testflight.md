@@ -105,6 +105,8 @@
 - **契约形态印证**：上述读/写路径的 path、`filter[app]`/关系 linkage、JSON:API `type` 均被真实 ASC 接受——这是 mock 测试证明不了的部分。
 - **仍待核实（高副作用，绝不自动冒烟）**：#1 邀请邮件触发点、#2 非空组级联删、#5 关系批量上限、#7 加构建通知、#8 `VALID` 最新过滤推进时机、#9–#14 送审/出口合规/过期/`autoNotify`、#13 拒后重提交、#15/#16/#17/#18 反馈附件实际形态（需账号内存在真实反馈）。这些须监督式走查（部分用一次性丢弃邮箱），见验证清单末项。
 
+> 后续补记（2026-06-14，M7 送审期对抗审查发现并修复）：本阶段首轮审查只盯了反馈截图的签名 URL 泄漏，**漏掉了 `testflight review-detail get/set` 把 `BetaAppReviewDetail.demoAccountPassword` 原样回显到 stdout** 的同类机密泄漏。送审域审查发现该缺陷后，以单点 redactor（`src/cli/review-detail-redaction.ts`）一并修复 TestFlight 与 submission 两域的全部 review-detail get/set 输出点：password 被剥离、以存在标志 `demoAccountPasswordSet` 取代，其余联系/演示账号字段保留。新增 CLI 级 redaction 测试（此前 `testflight review-detail` 无 CLI 级覆盖）。真机走查在 submission 域以真实 demo 密码确证关闭。
+
 ## 验证清单
 
 - [x] 能力层离线集成测试：组/测试员/构建/本地化/送审材料/送审提交/反馈列表与单读的精确 query 与 JSON:API body 断言；必带 filter（`filter[app]`/`filter[build]`）缺失的签名约束；create-only 字段（`isInternalGroup`/`hasAccessToAllBuilds`）不入 UpdateRequest；异步删（202）的"已受理"信封口径；关系数组 POST/DELETE 的 linkage 形态。

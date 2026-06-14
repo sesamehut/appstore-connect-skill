@@ -249,6 +249,119 @@ describe("testflight testers delete (async accepted envelope)", () => {
   });
 });
 
+// The literal demo-account password the mocked ASC returns on the beta review
+// detail; the shared redactor must keep this exact substring out of the
+// emitted envelope on both the get and the set paths.
+const DEMO_PW = "hunter2-demo-pw";
+
+describe("testflight review-detail get (demo-account password redacted)", () => {
+  it("emits the detail without the password and with demoAccountPasswordSet", async () => {
+    // getBetaAppReviewDetail reads the filter[app] collection and picks [0].
+    ascGet("/v1/betaAppReviewDetails", {
+      data: [
+        {
+          type: "betaAppReviewDetails",
+          id: "det-1",
+          attributes: {
+            contactEmail: "dev@x.com",
+            demoAccountName: "reviewer",
+            demoAccountPassword: DEMO_PW,
+            demoAccountRequired: true,
+            notes: "see demo",
+          },
+        },
+      ],
+      links: { self: `${ASC_API_BASE_URL}/v1/betaAppReviewDetails` },
+    });
+
+    const captured = makeIo();
+    const exit = await runCli(
+      ["testflight", "review-detail", "get", "--app", "app-1"],
+      captured.io,
+      env,
+    );
+
+    expect(exit).toBe(0);
+    const raw = captured.out[0] ?? "";
+    expect(raw).not.toContain(DEMO_PW);
+    const envelope = JSON.parse(raw) as {
+      data: {
+        attributes: {
+          demoAccountName: string;
+          demoAccountRequired: boolean;
+          notes: string;
+          demoAccountPasswordSet: boolean;
+          demoAccountPassword?: string;
+        };
+      };
+    };
+    expect(envelope.data.attributes.demoAccountPasswordSet).toBe(true);
+    expect(envelope.data.attributes.demoAccountPassword).toBeUndefined();
+    expect(envelope.data.attributes.demoAccountName).toBe("reviewer");
+    expect(envelope.data.attributes.demoAccountRequired).toBe(true);
+    expect(envelope.data.attributes.notes).toBe("see demo");
+  });
+});
+
+describe("testflight review-detail set (demo-account password redacted)", () => {
+  it("redacts the password the write-response echoes back", async () => {
+    let body: string | undefined;
+    getAgent()
+      .get(ASC_API_BASE_URL)
+      .intercept({ path: "/v1/betaAppReviewDetails/det-1", method: "PATCH" })
+      .reply((request) => {
+        body = request.body as string | undefined;
+        return {
+          statusCode: 200,
+          data: {
+            data: {
+              type: "betaAppReviewDetails",
+              id: "det-1",
+              // The PATCH response echoes the password; the set path must redact.
+              attributes: {
+                contactEmail: "dev@x.com",
+                demoAccountPassword: DEMO_PW,
+              },
+            },
+            links: {
+              self: `${ASC_API_BASE_URL}/v1/betaAppReviewDetails/det-1`,
+            },
+          },
+          responseOptions: { headers: JSON_HEADERS },
+        };
+      });
+
+    const captured = makeIo();
+    const exit = await runCli(
+      [
+        "testflight",
+        "review-detail",
+        "set",
+        "det-1",
+        "--contact-email",
+        "dev@x.com",
+        "--demo-account-password",
+        DEMO_PW,
+      ],
+      captured.io,
+      env,
+    );
+
+    expect(exit).toBe(0);
+    // The password rode in on the request body (that is expected); the leak we
+    // guard against is the OUTPUT envelope, never the request.
+    expect(body).toContain(DEMO_PW);
+    const raw = captured.out[0] ?? "";
+    expect(raw).not.toContain(DEMO_PW);
+    const envelope = JSON.parse(raw) as {
+      command: string;
+      data: { attributes: { demoAccountPasswordSet: boolean } };
+    };
+    expect(envelope.command).toBe("testflight review-detail set");
+    expect(envelope.data.attributes.demoAccountPasswordSet).toBe(true);
+  });
+});
+
 describe("testflight feedback get-screenshot (signed URLs de-queried, never echoed)", () => {
   it("sanitizes every screenshots[].url to origin+path and leaks no signature", async () => {
     ascGet("/v1/betaFeedbackScreenshotSubmissions/s1", {

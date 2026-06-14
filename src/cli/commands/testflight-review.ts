@@ -23,6 +23,7 @@ import {
   resolvePageLimit,
   resolveReadScope,
 } from "../read-scope.js";
+import { redactReviewDetailSecrets } from "../review-detail-redaction.js";
 import { forceArg, requireForce } from "./testflight-shared.js";
 
 // --- test-info (betaAppLocalization) ---
@@ -220,7 +221,7 @@ const reviewDetailGetCommand = defineCommand({
       cli.io,
       documentEnvelope(
         "testflight review-detail get",
-        { data: detail },
+        { data: redactReviewDetailSecrets(detail) },
         { resolved: { appId: ctx.args.app, detailId: detail.id } },
       ),
     );
@@ -304,7 +305,10 @@ const reviewDetailSetCommand = defineCommand({
     );
     emitResult(
       cli.io,
-      documentEnvelope("testflight review-detail set", document),
+      documentEnvelope("testflight review-detail set", {
+        ...document,
+        data: redactReviewDetailSecrets(document.data),
+      }),
     );
   },
 });

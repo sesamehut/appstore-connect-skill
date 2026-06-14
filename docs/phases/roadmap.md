@@ -22,7 +22,7 @@
 | M4 | 元数据与评论能力、最小 Skill 入口 | 资源读写能力面与 Skill 雏形 | 已完成（[阶段计划](archive/m4-metadata-reviews-skill-entry.md)） |
 | M5 | 报表工作流 | 销售/财务/分析报表下载链路 | 进行中（[阶段计划](m5-report-workflows.md)） |
 | M6 | 媒体素材工作流 | 截图与预览上传链路 | 已完成（[阶段计划](archive/m6-media-workflows.md)） |
-| M7 | TestFlight 与送审准备 | 首期范围能力闭环 | 进行中（TestFlight 部分已完成；送审准备待办，[阶段计划](m7-testflight.md)） |
+| M7 | TestFlight 与送审准备 | 首期范围能力闭环 | 已完成（TestFlight [阶段计划](m7-testflight.md) 与送审准备 [阶段计划](m7-submission-release.md) 两半均已交付） |
 | M8 | Skill 完备化与发布 | 任务级能力打磨、打包与使用文档 | 未开始 |
 | M9+ | 扩展与持续事项 | 商业化/营销能力、契约升级、生态复核 | 按需 |
 

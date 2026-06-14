@@ -74,8 +74,9 @@ export const DOMAINS: readonly DomainEntry[] = [
   },
   {
     name: "submission",
-    summary: "Prepare an App Store version for review and release",
-    status: { implemented: false, milestone: "M7" },
+    summary:
+      "Submission and release: preflight readiness, status, review detail, release config, export compliance, submit/cancel/release",
+    status: { implemented: true },
   },
 ];
 
@@ -105,5 +106,20 @@ export const API_UNSUPPORTED: readonly UnsupportedTask[] = [
     task: "Creating or downloading App Store Connect API keys",
     guidance:
       "Handle in App Store Connect on the web: Users and Access → Integrations.",
+  },
+  {
+    task: "Creating or reading legacy appStoreVersionSubmissions (per-version submit)",
+    guidance:
+      "Apple removed this model (no create request remains). Use the modern review submissions instead: asc submission preflight / status / submit.",
+  },
+  {
+    task: "Editing a review submission's items after it has been submitted",
+    guidance:
+      "A submitted review submission is immutable except to cancel it. Cancel and re-assemble: asc submission cancel <id> --force, then submit again (re-review starts from scratch).",
+  },
+  {
+    task: "Un-canceling or reviving a canceled review submission",
+    guidance:
+      "Cancellation is one-way; the version flips to Developer Rejected. Open a fresh submission and submit again: asc submission submit --version <id> --app <id> --force.",
   },
 ];

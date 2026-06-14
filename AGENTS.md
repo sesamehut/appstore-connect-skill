@@ -117,7 +117,15 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   data or an insufficient role is a reported skip. High-side-effect writes are
   NEVER smoked: adding a tester emails real invitations, submitting a build for
   beta review triggers a real immutable Apple review, and expiring a build is
-  irreversible.
+  irreversible. Setting `ASC_SMOKE_SUBMISSION=1` adds an App Store
+  submission/release pass of reversible / read-only steps on an editable
+  (non-live) version: it runs the read-only preflight, reads the version's
+  appStoreReviewDetail, reads the app's reviewSubmissions state, reads the
+  phased-release read-only fields, and set+restores releaseType (read, PATCH,
+  restore). Missing data or an insufficient role is a reported skip. The three
+  high-side-effect verbs are NEVER smoked: submit starts a real Apple App Review
+  of the public listing, release pushes a version live immediately, and cancel
+  withdraws a submission (forcing a fresh review).
 - **CLI** - the Skill entry CLI builds to `dist/cli/index.js`; run it during
   development with `node dist/cli/index.js <domain> <verb> [flags]` (e.g.
   `node dist/cli/index.js doctor` for the offline environment self-check).

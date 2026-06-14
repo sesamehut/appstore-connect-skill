@@ -187,22 +187,19 @@ describe("error funnel", () => {
 });
 
 describe("planned and unsupported boundaries", () => {
-  // reports gained real verbs in M5, media in M6, and testflight/builds in M7;
-  // their command trees are covered in cli-reports.test.ts, cli-media.test.ts,
-  // cli-testflight.test.ts, and cli-builds.test.ts instead. The planned-stub
-  // path stays exercised through 'submission', the next M7 domain.
-  it.each([["submission", "M7"]])(
-    "answers '%s' with exit 5 naming milestone %s, even with trailing args",
-    async (domain, milestone) => {
-      const captured = makeIo();
-      const exit = await runCli([domain, "anything", "goes"], captured.io, {});
+  // reports gained real verbs in M5, media in M6, and testflight/builds/
+  // submission in M7; their command trees are covered in cli-reports.test.ts,
+  // cli-media.test.ts, cli-testflight.test.ts, cli-builds.test.ts, and
+  // cli-submission.test.ts. With submission now implemented, no planned domain
+  // remains; an unknown verb under a real domain is a usage error (exit 64).
+  it("answers an unknown 'submission' verb with a usage error (exit 64)", async () => {
+    const captured = makeIo();
+    const exit = await runCli(["submission", "no-such-verb"], captured.io, {});
 
-      expect(exit).toBe(5);
-      expect(captured.out).toHaveLength(0);
-      expect(captured.err[0]).toContain("error[not-implemented]:");
-      expect(captured.err[0]).toContain(milestone);
-    },
-  );
+    expect(exit).toBe(64);
+    expect(captured.out).toHaveLength(0);
+    expect(captured.err[0]).toContain("error[usage]:");
+  });
 
   it("lists implemented, planned, and API-unsupported tasks via capabilities", async () => {
     const captured = makeIo();
@@ -220,15 +217,15 @@ describe("planned and unsupported boundaries", () => {
     expect(data.implemented.map((entry) => entry.name)).toContain("media");
     expect(data.implemented.map((entry) => entry.name)).toContain("testflight");
     expect(data.implemented.map((entry) => entry.name)).toContain("builds");
-    expect(data.planned).toContainEqual(
-      expect.objectContaining({ name: "submission", milestone: "M7" }),
-    );
+    expect(data.implemented.map((entry) => entry.name)).toContain("submission");
+    // Every first-party domain is implemented now; nothing remains planned.
+    expect(data.planned).toHaveLength(0);
     expect(data.unsupportedByAppleApi.length).toBeGreaterThan(0);
   });
 });
 
 describe("--help", () => {
-  it("renders root usage with implemented and planned domains, exit 0", async () => {
+  it("renders root usage listing every implemented domain, exit 0", async () => {
     const captured = makeIo();
     const exit = await runCli(["--help"], captured.io, {});
 
@@ -237,7 +234,7 @@ describe("--help", () => {
     expect(usage).toContain("apps");
     expect(usage).toContain("metadata");
     expect(usage).toContain("reports");
-    expect(usage).toContain("not yet implemented");
+    expect(usage).toContain("submission");
   });
 
   it("renders leaf usage with the leaf's flags", async () => {

@@ -43,6 +43,12 @@ This file is the docs entry point and inventory.
     groups and testers, build distribution visibility, beta build/app
     localizations, beta review detail + submission, feedback listing and the
     attachment download workflow, and the CLI `testflight` / `builds` domains
+  - `m7-submission-release.md` — Active M7 phase plan (submission/release
+    portion): the read-only submission-readiness preflight, App Store review
+    detail, release configuration (releaseType / earliest date / build),
+    export-compliance boolean, the modern reviewSubmissions assembly + submit /
+    cancel workflow, manual release-to-public trigger, and the CLI `submission`
+    domain
   - `archive/` — Detailed phase plans move here once their phase completes
     - `m0-engineering-foundation.md` — Completed M0 phase plan: engineering
       foundation (toolchain, unified checks, CI)

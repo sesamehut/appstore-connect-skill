@@ -6,12 +6,11 @@ import { capabilitiesCommand } from "./commands/capabilities.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { mediaCommand } from "./commands/media.js";
 import { metadataCommand } from "./commands/metadata.js";
-import { makePlannedCommand } from "./commands/planned.js";
 import { reportsCommand } from "./commands/reports.js";
 import { reviewsCommand } from "./commands/reviews.js";
+import { submissionCommand } from "./commands/submission.js";
 import { testflightCommand } from "./commands/testflight.js";
 import { versionsCommand } from "./commands/versions.js";
-import { DOMAINS } from "./registry.js";
 
 /**
  * Kept as a constant (not read from package.json at runtime) so the M8
@@ -20,13 +19,9 @@ import { DOMAINS } from "./registry.js";
  */
 export const CLI_VERSION = "0.0.0";
 
-function plannedDomain(name: string) {
-  const entry = DOMAINS.find((domain) => domain.name === name);
-  if (entry === undefined) {
-    throw new Error(`Domain '${name}' is missing from the registry.`);
-  }
-  return makePlannedCommand(entry);
-}
+// makePlannedCommand / planned.ts stay as harmless extension points: with the
+// submission domain now implemented, no domain is planned, so root wires only
+// real commands. The next planned domain re-introduces a plannedDomain() helper.
 
 export const rootCommand = defineCommand({
   meta: {
@@ -46,6 +41,6 @@ export const rootCommand = defineCommand({
     media: mediaCommand,
     testflight: testflightCommand,
     builds: buildsCommand,
-    submission: plannedDomain("submission"),
+    submission: submissionCommand,
   },
 });

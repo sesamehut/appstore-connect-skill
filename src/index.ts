@@ -491,4 +491,93 @@ export {
 } from "./workflows/report-files.js";
 export type { SavedBinaryFile } from "./workflows/report-files.js";
 
+export {
+  createReviewSubmission,
+  createReviewSubmissionItem,
+  deleteReviewSubmissionItem,
+  getReviewSubmission,
+  listReviewSubmissionItems,
+  listReviewSubmissions,
+  updateReviewSubmission,
+  updateReviewSubmissionItem,
+} from "./capabilities/review-submissions.js";
+export type {
+  GetReviewSubmissionOptions,
+  ListReviewSubmissionItemsOptions,
+  ListReviewSubmissionsOptions,
+  ReviewSubmission,
+  ReviewSubmissionItem,
+  ReviewSubmissionItemContent,
+  ReviewSubmissionItemResponse,
+  ReviewSubmissionItemState,
+  ReviewSubmissionItemUpdateAttributes,
+  ReviewSubmissionPlatform,
+  ReviewSubmissionResponse,
+  ReviewSubmissionState,
+  ReviewSubmissionUpdateAttributes,
+} from "./capabilities/review-submissions.js";
+
+export {
+  createAppStoreReviewDetail,
+  findAppStoreReviewDetail,
+  getAppStoreReviewDetail,
+  updateAppStoreReviewDetail,
+} from "./capabilities/app-store-review-details.js";
+export type {
+  AppStoreReviewDetail,
+  AppStoreReviewDetailCreateAttributes,
+  AppStoreReviewDetailResponse,
+  AppStoreReviewDetailUpdateAttributes,
+} from "./capabilities/app-store-review-details.js";
+
+export {
+  createAppStoreVersionReleaseRequest,
+  getAppStoreVersion,
+  getVersionAppStoreReviewDetail,
+  getVersionBuild,
+  getVersionPhasedRelease,
+  updateAppStoreVersionRelease,
+} from "./capabilities/app-store-versions-release.js";
+// getVersionReviewSubmission reads the legacy, Apple-@deprecated
+// appStoreVersionSubmission to-one relationship (status read only; modern
+// review goes through reviewSubmissions). The deprecation is intrinsic to the
+// contract resource, so the rule is suppressed exactly at this re-export.
+// eslint-disable-next-line @typescript-eslint/no-deprecated
+export { getVersionReviewSubmission } from "./capabilities/app-store-versions-release.js";
+export type {
+  AppStoreVersionPhasedReleaseResponse,
+  AppStoreVersionReleaseConfig,
+  AppStoreVersionReleaseRequestResponse,
+  AppStoreVersionResponse,
+  AppStoreVersionSubmissionResponse,
+  AppVersionState,
+  BuildWithoutIncludesResponse,
+  GetAppStoreVersionOptions,
+  PhasedReleaseState,
+  ReleaseType,
+} from "./capabilities/app-store-versions-release.js";
+
+export { setBuildExportCompliance } from "./capabilities/export-compliance.js";
+
+export { getAgeRatingDeclaration } from "./capabilities/age-rating.js";
+export type { AgeRatingDeclaration } from "./capabilities/age-rating.js";
+
+export {
+  cancelReviewSubmission,
+  releaseVersionNow,
+  submitVersionForReview,
+} from "./workflows/submission-assembly.js";
+export type {
+  CancelReviewSubmissionResult,
+  ReleaseVersionNowResult,
+  SubmitVersionForReviewResult,
+} from "./workflows/submission-assembly.js";
+
+export { preflightVersionSubmission } from "./workflows/submission-preflight.js";
+export type {
+  PreflightResult,
+  PreflightSnapshot,
+  SubmissionBlocker,
+} from "./workflows/submission-preflight.js";
+
 export type { components, operations, paths } from "./generated/asc-openapi.js";

@@ -1,6 +1,6 @@
 ---
 name: app-store-connect
-description: Operates Apple App Store Connect through a bundled CLI. Lists apps and App Store versions; reads and updates store metadata and localizations (description, keywords, what's new, promotional text, app name, subtitle, privacy policy); adds new locales; reads customer reviews and posts or replaces developer responses; downloads sales, finance, and analytics reports to disk; uploads, lists, reorders, and deletes App Store screenshots and preview videos; manages TestFlight beta groups, testers, test info, beta review detail and submission, and reads/downloads beta feedback; lists builds, resolves the latest processed build, edits build distribution and notes, and expires builds. Use when the user asks about App Store Connect, ASC, app metadata, store listings, localization, customer reviews, review replies, sales or download numbers, finance reports, analytics, TestFlight, beta testers, beta groups, beta feedback, builds, App Store reports, screenshots, or preview videos.
+description: Operates Apple App Store Connect through a bundled CLI. Lists apps and App Store versions; reads and updates store metadata and localizations (description, keywords, what's new, promotional text, app name, subtitle, privacy policy); adds new locales; reads customer reviews and posts or replaces developer responses; downloads sales, finance, and analytics reports to disk; uploads, lists, reorders, and deletes App Store screenshots and preview videos; manages TestFlight beta groups, testers, test info, beta review detail and submission, and reads/downloads beta feedback; lists builds, resolves the latest processed build, edits build distribution and notes, and expires builds; runs an App Store submission-readiness preflight, sets review contact/demo detail, configures release timing and the export-compliance flag, reads submission status, and submits, cancels, or releases a version for App Review. Use when the user asks about App Store Connect, ASC, app metadata, store listings, localization, customer reviews, review replies, sales or download numbers, finance reports, analytics, TestFlight, beta testers, beta groups, beta feedback, builds, App Store reports, screenshots, preview videos, submitting an app for review, App Review, release timing, export compliance, or releasing a version.
 compatibility: Requires Node.js >=22.12 and network access to api.appstoreconnect.apple.com. Runs in Claude Code on the user's machine.
 ---
 
@@ -30,17 +30,23 @@ list/set/delete; `review-detail` get/set; `feedback`
 list-crashes/list-screenshots/get-crash/get-screenshot/download), `builds`
 (list/get/latest/expire; `beta-detail` get/set; `notes` list/set/delete;
 `review` status/submit; `groups` add/remove; `testers` list/add/remove;
-`pre-release-versions` list), `doctor`, `capabilities`.
+`pre-release-versions` list), `submission` (`preflight`; `status` list/get;
+`review-detail` get/set; `release-config` set; `export-compliance` set;
+`submit`/`cancel`/`release` — high side effect, `--force`), `doctor`,
+`capabilities`.
 
 **Not implemented here yet** (the CLI answers these with exit code 5 and the
-planned milestone): `submission` — preparing an App Store version for review
-and release (M7). Tell the user the capability is planned, not that Apple
-lacks it.
+planned milestone): nothing in the current first-party scope — every domain
+above is implemented. Deferred-but-Apple-supported writes (phased-release
+control, age-rating questionnaire, export-compliance declaration documents)
+are not exposed yet; tell the user they are planned, not that Apple lacks them.
 
 **Not possible via Apple's API** (route the user to the App Store Connect
 website): editing or deleting customer reviews or star ratings, App Review /
 Resolution Center messages, agreements/tax/banking, creating or downloading
-API keys.
+API keys, the legacy per-version submission model (Apple removed it — use
+`submission submit`), editing a review submission's items after submit (cancel
+and re-submit instead), and un-canceling a canceled submission.
 
 Run `capabilities` for the authoritative machine-readable map — do not guess.
 
@@ -174,6 +180,17 @@ Exit codes:
 | Stop distributing a build to groups | `builds groups remove <buildId> --group id1,id2 --force` |
 | List/add/remove a build's individual testers | `builds testers add <buildId> --tester id1,id2 --force` |
 | List pre-release (train) versions | `builds pre-release-versions list --app <appId>` |
+| Check if a version is ready to submit | `submission preflight --version <versionId>` |
+| List a version's review submissions | `submission status list --app <appId>` |
+| Read one review submission | `submission status get <submissionId> --include app,items,appStoreVersionForReview` |
+| Read a version's App Review contact/demo detail | `submission review-detail get --version <versionId>` |
+| Set a version's App Review contact/demo detail | `submission review-detail set --version <versionId> --contact-email a@x.com` |
+| Configure release timing (manual/scheduled) | `submission release-config set --version <versionId> --release-type MANUAL` |
+| Attach/swap a build on a version | `submission release-config set --version <versionId> --build <buildId>` |
+| Set a build's export-compliance flag | `submission export-compliance set --build <buildId> --uses-non-exempt-encryption false` |
+| Submit a version for App Review (real review) | `submission submit --version <versionId> --force` |
+| Cancel/withdraw a review submission (forces re-review) | `submission cancel <submissionId> --force` |
+| Release an approved version to the public now | `submission release --version <versionId> --force` |
 
 `media previews` mirrors `media screenshots`, swapping `--display-type` for
 `--preview-type` (and `upload` adds optional `--mime-type` / `--frame-time-code`).
@@ -244,6 +261,28 @@ Exit codes:
   fresh submit). Never run it speculatively.
 - **`builds expire` is irreversible.** Apple's API has no un-expire; an expired
   build leaves testing for good. Requires `--force`.
+- **Submitting a version for App Review starts a real, public review.**
+  `submission submit --version <versionId> --force` opens a modern review
+  submission and PATCHes it submitted — this triggers a REAL Apple App Review of
+  the live store listing. Run `submission preflight` first and confirm with the
+  user; never submit speculatively. The call is async-accept (the envelope
+  reports `accepted`, not a final state).
+- **Releasing a version goes public immediately and cannot be undone.**
+  `submission release --version <versionId> --force` releases an approved
+  (MANUAL, pending-developer-release) version to the public right away. There is
+  no un-release. Confirm with the user first.
+- **Canceling a review submission forces a fresh review.** `submission cancel
+  <submissionId> --force` withdraws a submission; the version flips to Developer
+  Rejected, accepted items must be re-submitted, and re-review starts from
+  scratch. A canceled submission cannot be un-canceled.
+- The three `submission` high-side-effect verbs — `submit`, `cancel`, `release`
+  — require `--force` (a missing `--force` is exit 64 before any request). They
+  are never run by the smoke check; treat them like the other irreversible
+  actions and confirm with the user.
+- The legacy per-version submission model (`appStoreVersionSubmissions` create/
+  read) is **not supported by Apple's API** (exit 6) — Apple removed it. Use
+  `submission submit`/`status`/`preflight` instead. Editing a submission's items
+  after submit is also unsupported (cancel and re-submit); un-canceling is too.
 - **Enabling a public link exposes the app.** `testflight groups public-link
   --enable` (and `create --public-link`) opens public external recruitment — a
   real exposure, no per-person email — and requires `--force`.

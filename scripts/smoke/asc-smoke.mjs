@@ -46,6 +46,19 @@
 // beta review triggers a real immutable Apple review, and expiring a build is
 // irreversible — those have offline tests plus a one-time supervised walkthrough.
 //
+// Setting ASC_SMOKE_SUBMISSION=1 additionally exercises the App Store
+// submission/release surface with REVERSIBLE / read-only steps only, on an
+// EDITABLE (non-live) version: it runs the read-only preflight, reads the
+// version's appStoreReviewDetail (a not-found is fine), reads the app's existing
+// reviewSubmissions state (filter[app]), reads the phased-release read-only
+// fields, and does a set+restore of releaseType (read current → PATCH to a
+// chosen value → restore the original, mirroring the promotionalText restore
+// pattern). Missing data or an insufficient role is a reported skip. The three
+// HIGH-SIDE-EFFECT verbs are NEVER smoked: submit starts a REAL Apple App Review
+// of the public listing, release pushes a version live immediately, and cancel
+// withdraws a submission (forcing a fresh review) — all irreversible, all with
+// offline tests plus a one-time supervised walkthrough.
+//
 // Deliberately outside `npm run check` and CI: it needs network access and
 // real credentials, which never enter the repository. Run via `npm run smoke`
 // (which builds dist/ first).
@@ -72,9 +85,12 @@ import {
   downloadFinanceReport,
   downloadSalesReport,
   ensureScreenshotSet,
+  findAppStoreReviewDetail,
   getApp,
+  getAppStoreVersion,
   getAppStoreVersionLocalization,
   getScreenshotStatus,
+  getVersionPhasedRelease,
   listAnalyticsReportInstances,
   listAnalyticsReportRequests,
   listAnalyticsReports,
@@ -88,9 +104,12 @@ import {
   listCrashFeedback,
   listCustomerReviewsForApp,
   listGroupTesters,
+  listReviewSubmissions,
   listScreenshotFeedback,
   loadAscCredentialsFromEnv,
+  preflightVersionSubmission,
   updateAppStoreVersionLocalization,
+  updateAppStoreVersionRelease,
   uploadScreenshot,
 } from "../../dist/index.js";
 
@@ -243,6 +262,15 @@ try {
   } else {
     console.log(
       "testflight:  skipped (set ASC_SMOKE_TESTFLIGHT=1 to enable read-only + create/delete-group steps)",
+    );
+  }
+
+  // Step 13 — gated submission/release reversible/read-only check (see header).
+  if (process.env.ASC_SMOKE_SUBMISSION === "1") {
+    await runSubmissionCheck(client, detail.data);
+  } else {
+    console.log(
+      "submission:  skipped (set ASC_SMOKE_SUBMISSION=1 to enable preflight + reversible releaseType set/restore; submit/cancel/release are never smoked)",
     );
   }
 
@@ -744,6 +772,165 @@ async function runTestflightCheck(client, appId) {
         `testflight:  deleted the smoke beta group ...${createdGroupId.slice(-4)} (delete accepted)`,
       );
     }
+  }
+}
+
+/**
+ * App Store submission/release reversible / read-only smoke, on an EDITABLE
+ * (non-live) version only. Steps: preflight (read-only), read the version's
+ * appStoreReviewDetail (a not-found is fine), read the app's reviewSubmissions
+ * state (filter[app]), read the phased-release read-only fields, then set+restore
+ * releaseType (read current → PATCH to a chosen value → restore the original,
+ * mirroring the promotionalText restore pattern). The three HIGH-SIDE-EFFECT
+ * verbs (submit → real Apple review, release → immediate public release, cancel
+ * → forces re-review) are NEVER smoked here. An insufficient role is a reported
+ * skip, not a failure.
+ *
+ * @param {import("../../dist/index.js").AscClient} client
+ * @param {import("../../dist/index.js").App} app
+ */
+async function runSubmissionCheck(client, app) {
+  // Editable, non-live states only: release-config writes (and a hypothetical
+  // submit) must never touch a public listing, so the smoke confines itself to
+  // an editable draft version.
+  const editableStates = [
+    "PREPARE_FOR_SUBMISSION",
+    "WAITING_FOR_EXPORT_COMPLIANCE",
+    "READY_FOR_REVIEW",
+  ];
+  const versions = await listAppStoreVersions(client, app.id, {
+    scope: { maxItems: 20 },
+    fields: ["versionString", "appVersionState"],
+  });
+  const target = versions.items.find((version) =>
+    editableStates.includes(version.attributes?.appVersionState ?? ""),
+  );
+  if (target === undefined) {
+    console.log(
+      "submission:  skipped (no version in an editable state; submission smoke avoids the live listing)",
+    );
+    return;
+  }
+  console.log(
+    `submission:  target version ${target.attributes?.versionString ?? "?"} ` +
+      `[${target.attributes?.appVersionState ?? "?"}]`,
+  );
+
+  try {
+    // Read-only preflight: the structured readiness report (no writes).
+    const preflight = await preflightVersionSubmission(
+      client,
+      app.id,
+      target.id,
+    );
+    console.log(
+      `submission:  preflight submittable=${preflight.submittable}` +
+        `${preflight.blockers.length > 0 ? ` (blockers: ${preflight.blockers.join(", ")})` : ""}`,
+    );
+
+    // Read-only: the per-version App Store review detail (absence is normal).
+    const reviewDetail = await findAppStoreReviewDetail(client, target.id);
+    console.log(
+      `submission:  review detail ${reviewDetail === undefined ? "absent (none set yet)" : `present ...${reviewDetail.id.slice(-4)}`}`,
+    );
+
+    // Read-only: existing review submissions for the app (filter[app] required).
+    const submissions = await listReviewSubmissions(client, {
+      appId: app.id,
+      scope: { maxItems: 5 },
+    });
+    console.log(
+      `submission:  ${submissions.items.length} review submission(s) read${submissions.truncated ? " (more exist)" : ""}` +
+        `${
+          submissions.items.length === 0
+            ? ""
+            : `; states: ${submissions.items.map((s) => s.attributes?.state ?? "?").join(", ")}`
+        }`,
+    );
+
+    // Read-only: phased-release fields (decision B2 exposes them read-only).
+    const phased = await getVersionPhasedRelease(client, target.id);
+    const phasedAttributes = phased.data?.attributes;
+    console.log(
+      `submission:  phased release ${
+        phasedAttributes?.phasedReleaseState === undefined
+          ? "not configured"
+          : `${phasedAttributes.phasedReleaseState} (day ${phasedAttributes.currentDayNumber ?? "?"})`
+      }`,
+    );
+  } catch (error) {
+    if (error instanceof AscPermissionError) {
+      console.log(
+        "submission:  403 on a read — this key lacks the submission role (permission diagnostic verified); skipped",
+      );
+      return;
+    }
+    throw error;
+  }
+
+  // Reversible set+restore of releaseType (the lowest-risk writable release
+  // field). Read the current value, PATCH to a chosen value, then restore the
+  // original — mirroring the promotionalText restore. A captured error keeps a
+  // restore failure from masking the verification failure.
+  const current = await getAppStoreVersion(client, target.id, {
+    fields: ["releaseType"],
+  });
+  const originalReleaseType = current.data.attributes?.releaseType ?? null;
+  // PATCH to a different value when possible so the roundtrip actually changes
+  // something; AFTER_APPROVAL is the safe default for an editable draft.
+  const probeReleaseType =
+    originalReleaseType === "AFTER_APPROVAL" ? "MANUAL" : "AFTER_APPROVAL";
+  console.log(
+    `submission:  releaseType set+restore (current ${originalReleaseType ?? "(unset)"} → ${probeReleaseType} → restore)`,
+  );
+  // Guard ONLY the first (pre-mutation) probe PATCH: a key that can read but not
+  // write release config 403s here before anything changed, which is a reported
+  // skip, not a hard failure. Everything past this point (read-back + restore)
+  // runs AFTER a successful mutation, so a 403 there must surface loudly — a
+  // half-mutated state must never be silently swallowed.
+  try {
+    await updateAppStoreVersionRelease(client, target.id, {
+      releaseType: probeReleaseType,
+    });
+  } catch (error) {
+    if (error instanceof AscPermissionError) {
+      console.log(
+        "submission:  releaseType write 403 — key lacks version-write role; skipped",
+      );
+      return;
+    }
+    throw error;
+  }
+
+  let checkError;
+  try {
+    const readBack = await getAppStoreVersion(client, target.id, {
+      fields: ["releaseType"],
+    });
+    if (readBack.data.attributes?.releaseType !== probeReleaseType) {
+      throw new Error(
+        "submission check failed: the releaseType read-back did not return the probe value",
+      );
+    }
+    console.log("submission:  releaseType PATCH + read-back ok");
+  } catch (error) {
+    checkError = error;
+  }
+
+  try {
+    await updateAppStoreVersionRelease(client, target.id, {
+      releaseType: originalReleaseType,
+    });
+    console.log("submission:  original releaseType restored");
+  } catch (restoreError) {
+    console.error(
+      `submission:  RESTORE FAILED for version ${target.id}; ` +
+        `original releaseType was: ${originalReleaseType ?? "(unset)"}`,
+    );
+    throw checkError ?? restoreError;
+  }
+  if (checkError !== undefined) {
+    throw checkError;
   }
 }
 
