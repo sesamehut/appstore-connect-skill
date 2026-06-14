@@ -1,6 +1,6 @@
 {
   "name": "appstore-connect-skill",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -24,8 +24,13 @@
     "contract:update": "npm run contract:fetch && npm run contract:generate",
     "contract:verify": "node scripts/contract/verify.mjs",
     "contract:drift": "npm run contract:fetch && node scripts/contract/check-drift.mjs",
+    "version:check": "node scripts/build/version-check.mjs",
+    "skill:generate": "node scripts/skill/generate.mjs",
+    "skill:verify": "node scripts/skill/verify.mjs",
+    "bundle": "npm run build && node scripts/build/bundle.mjs",
+    "package:plugin": "node scripts/build/package-plugin.mjs",
     "smoke": "npm run build && node scripts/smoke/asc-smoke.mjs",
-    "check": "npm run contract:verify && npm run typecheck && npm run lint && npm run format:check && npm run test"
+    "check": "npm run contract:verify && npm run version:check && npm run skill:verify && npm run typecheck && npm run lint && npm run format:check && npm run test"
   },
   "overrides": {
     "openapi-typescript": {
@@ -36,6 +41,7 @@
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.19.21",
     "@vitest/coverage-v8": "^4.1.8",
+    "esbuild": "0.28.1",
     "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
     "fflate": "^0.8.3",

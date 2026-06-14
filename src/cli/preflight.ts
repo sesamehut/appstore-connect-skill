@@ -33,6 +33,24 @@ export interface DoctorCheck {
   readonly fix?: string;
 }
 
+/**
+ * Build-time flag esbuild replaces with the literal `true` (via `define`) when
+ * producing the single-file `asc.mjs`. In a normal tsc dev build it is never
+ * defined, so `isBundled()` reads it through a typeof guard and falls back to
+ * false — dev behavior is unchanged. The flag exists because the bundle has no
+ * node_modules and no sibling `index.js`, so the dependency and build checks
+ * below cannot probe the filesystem and must instead self-report as a bundle.
+ */
+declare const __ASC_BUNDLED__: boolean;
+
+function isBundled(): boolean {
+  // typeof guard keeps this a ReferenceError-safe read in the dev build, where
+  // the identifier is never defined; esbuild folds it to `true` in the bundle.
+  return typeof __ASC_BUNDLED__ !== "undefined" && __ASC_BUNDLED__;
+}
+
+const BUNDLED_DETAIL = "running from single-file bundle";
+
 export function checkNodeVersion(currentVersion: string): DoctorCheck {
   const satisfied = compareVersions(currentVersion, MIN_NODE_VERSION) >= 0;
   return {
@@ -49,6 +67,16 @@ export function checkNodeVersion(currentVersion: string): DoctorCheck {
 
 /** Catches a partial or stale install: both runtime deps must be loadable. */
 export async function checkDependencies(): Promise<DoctorCheck> {
+  // In the bundle the deps are inlined, so there is nothing to import by
+  // specifier; esbuild would also have resolved these static strings at build
+  // time, making the probe meaningless. Self-report as pass instead.
+  if (isBundled()) {
+    return {
+      name: "dependencies",
+      status: "pass",
+      detail: `jose and openapi-fetch are inlined (${BUNDLED_DETAIL})`,
+    };
+  }
   const missing: string[] = [];
   for (const name of ["jose", "openapi-fetch"]) {
     try {
@@ -73,6 +101,15 @@ export async function checkDependencies(): Promise<DoctorCheck> {
 
 /** Validates that the library half of dist/ is importable alongside the CLI. */
 export async function checkBuild(): Promise<DoctorCheck> {
+  // The bundle has no sibling `../index.js`: the library half is compiled into
+  // this same file. If we reached this code the build is, by definition, intact.
+  if (isBundled()) {
+    return {
+      name: "build",
+      status: "pass",
+      detail: `capability modules are inlined (${BUNDLED_DETAIL})`,
+    };
+  }
   try {
     await import("../index.js");
     return {

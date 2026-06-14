@@ -33,7 +33,7 @@ SKILL.md 按官方"路由器"模式编写，自身保持精简（官方预算：
 
 Skill 形态没有"保证脚本能跑"的官方机制（核实于 2026-06）：SKILL.md 的 `compatibility` 字段仅是声明性文本，Claude Code 不校验它，也没有 Skill 安装钩子可自动执行依赖安装；官方示例库的通行模式是"声明要求 + 让 agent 现场解决"——脚本因缺依赖失败后，agent 依 SKILL.md 给出的确切命令自行安装并重试。本项目按三道防线落实：
 
-- **安装面最小化**——运行时依赖仅两个（见[架构总览](../architecture/overview.md)的依赖纪律），无原生编译、无 postinstall 脚本，首次安装几秒内完成，失败空间极小。
+- **安装面最小化**——运行时依赖仅三个（jose / openapi-fetch / citty，见[架构总览](../architecture/overview.md)的依赖纪律），无原生编译、无 postinstall 脚本，首次安装几秒内完成，失败空间极小。
 - **声明加自愈指引**——`compatibility` 声明 Node 基线与网络要求；SKILL.md 的安装命令一律带显式路径指向 Skill 自身目录（npm ci 配合入库的 lockfile，依赖树确定），杜绝 agent 在用户项目的工作目录里误装出 node_modules；CLI 入口做 preflight 自检（Node 版本、依赖可加载、凭据环境变量齐全），失败时输出"缺什么、怎么补"，不抛裸堆栈。
 - **分发态消灭安装步骤**——对外发布的 Skill 包内置单文件 CLI 产物（构建策略见[架构总览](../architecture/overview.md)），不含 node_modules、不要求任何安装命令，环境前提只剩 Node 本身。
 

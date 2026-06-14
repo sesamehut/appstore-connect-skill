@@ -49,7 +49,12 @@ This file is the docs entry point and inventory.
     export-compliance boolean, the modern reviewSubmissions assembly + submit /
     cancel workflow, manual release-to-public trigger, and the CLI `submission`
     domain
-  - `archive/` — Detailed phase plans move here once their phase completes
+  - `m8-skill-packaging.md` — Active M8 phase plan: the esbuild single-file
+    zero-install bundle, the single-source SKILL.md template (skill:generate /
+    skill:verify), the `package:plugin` payload assembly with secret-scan, the
+    standalone plugin repo + marketplace entry, four-way version consistency,
+    the from-zero plugin README, the capability description / validation /
+    feedback audit, and the release steps with org-permission fallback
     - `m0-engineering-foundation.md` — Completed M0 phase plan: engineering
       foundation (toolchain, unified checks, CI)
     - `m1-api-contract-layer.md` — Completed M1 phase plan: API contract

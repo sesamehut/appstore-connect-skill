@@ -92,9 +92,10 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   If a claim depends on current Apple behavior, check the official source before
   presenting it as current.
 - **Code changes** - run `npm run check` from the repo root: contract verify,
-  typecheck, lint, format check, and tests - the same gate CI runs on every PR
-  and push to main. Individual scripts: `typecheck`, `lint`, `format`,
-  `format:check`, `test`, `test:watch`, `coverage`, `build`.
+  version check, SKILL verify, typecheck, lint, format check, and tests - the
+  same gate CI runs on every PR and push to main. Individual scripts:
+  `typecheck`, `lint`, `format`, `format:check`, `test`, `test:watch`,
+  `coverage`, `build`, `version:check`, `skill:verify`.
 - **Real-credential smoke** - `npm run smoke` builds `dist/` and makes a
   handful of minimal reads against the real ASC API. It needs network plus
   `ASC_*` env vars (key ID, optional issuer ID, private key inline or as a
@@ -134,6 +135,21 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   own config (quote it as `'--'` if you must). The project-level skill at
   `.claude/skills/app-store-connect/SKILL.md` targets the repo's own `dist/`
   build, so rebuild after CLI changes.
+- **Distribution build (M8)** - `npm run bundle` tsc-builds then esbuilds the CLI
+  into one self-contained ESM file `dist/bundle/asc.mjs` with its runtime deps
+  inlined (esbuild is a build-time devDependency only, never in `dependencies`).
+  A build-time `__ASC_BUNDLED__` flag makes `doctor` self-aware so its dependency
+  and build checks pass without a node_modules. `npm run package:plugin` then
+  assembles the full Claude Code plugin payload into `dist/plugin/` via an
+  EXPLICIT allow-list - it never globs the repo root, which physically holds a
+  real `.p8` and `.env.local` - and runs a fail-closed secret-scan over the
+  staging tree before the payload may ship. SKILL.md has a single source
+  (`scripts/skill/SKILL.template.md`): `skill:generate` renders the dev/plugin
+  variants and `skill:verify` (in `check`) fails closed if the committed dev
+  SKILL.md drifts from the template. `version:check` (in `check`) keeps
+  `package.json` version and `CLI_VERSION` (`src/cli/root.ts`) in lockstep; the
+  plugin.json and marketplace-entry versions are pre-publish gates. Both
+  `dist/bundle/` and `dist/plugin/` are gitignored generated artifacts.
 - **Generated contract changes** - regenerate with `npm run contract:update`
   (fetches the latest official Apple spec, regenerates `src/generated/`, and
   refreshes the metadata manifest). Generation is deterministic: re-running on

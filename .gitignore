@@ -1,9 +1,11 @@
 # Dependencies
 node_modules/
 
-# Build / generated output
-dist/
-build/
+# Build / generated output. Anchored to the repo root so `build/` does not
+# also swallow source dirs like scripts/build/ (which holds the bundle and
+# version-check scripts that must be committed).
+/dist/
+/build/
 *.tsbuildinfo
 coverage/
 
