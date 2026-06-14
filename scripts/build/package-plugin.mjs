@@ -21,6 +21,7 @@ import {
   buildReadme,
   PLUGIN_CLAUDE_MD,
   PLUGIN_GITIGNORE,
+  PLUGIN_GITATTRIBUTES,
   repoRoot,
   scanForSecrets,
 } from "./plugin-payload.mjs";
@@ -86,6 +87,7 @@ const written = [
   [path.join(stagingDir, "README.md"), readme],
   [path.join(stagingDir, "CLAUDE.md"), PLUGIN_CLAUDE_MD],
   [path.join(stagingDir, ".gitignore"), PLUGIN_GITIGNORE],
+  [path.join(stagingDir, ".gitattributes"), PLUGIN_GITATTRIBUTES],
 ];
 
 for (const [filePath, content, options] of written) {

@@ -85,7 +85,8 @@ checkout.
 ## This repo is GENERATED — do not hand-edit
 
 Every file here (\`.claude-plugin/plugin.json\`, \`skills/${PLUGIN_NAME}/SKILL.md\`,
-\`cli/asc.mjs\`, \`README.md\`, this \`CLAUDE.md\`, \`.gitignore\`) is produced by the
+\`cli/asc.mjs\`, \`README.md\`, this \`CLAUDE.md\`, \`.gitignore\`, \`.gitattributes\`)
+is produced by the
 upstream development repo \`appstore-connect-skill\` via \`npm run package:plugin\`.
 Editing files here directly will be overwritten on the next release and will
 drift from the audited source.
@@ -135,6 +136,13 @@ Thumbs.db
 .claude/plans/
 .claude/stats-cache.json
 .claude/worktrees/
+`;
+
+// `.gitattributes` pins LF on checkout for every platform so the bundled CLI's
+// `#!/usr/bin/env node` shebang survives intact (the skill invokes it via
+// `node`, but enforcing LF also stops noisy CRLF churn on Windows clones of a
+// generated, byte-stable artifact).
+export const PLUGIN_GITATTRIBUTES = `* text=auto eol=lf
 `;
 
 /**
