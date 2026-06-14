@@ -23,7 +23,7 @@
 | M5 | 报表工作流 | 销售/财务/分析报表下载链路 | 进行中（[阶段计划](m5-report-workflows.md)） |
 | M6 | 媒体素材工作流 | 截图与预览上传链路 | 已完成（[阶段计划](archive/m6-media-workflows.md)） |
 | M7 | TestFlight 与送审准备 | 首期范围能力闭环 | 已完成（TestFlight [阶段计划](m7-testflight.md) 与送审准备 [阶段计划](m7-submission-release.md) 两半均已交付） |
-| M8 | Skill 完备化与发布 | 任务级能力打磨、打包与使用文档 | 未开始 |
+| M8 | Skill 完备化与发布 | 任务级能力打磨、打包与使用文档 | 已完成（[阶段计划](m8-skill-packaging.md)；插件 [sesamehut/appstore-connect-plugin](https://github.com/sesamehut/appstore-connect-plugin) 经 [marketplace](https://github.com/sesamehut/plugins-marketplace) 分发，安装命令 `/plugin install app-store-connect@sesamehut-plugins`） |
 | M9+ | 扩展与持续事项 | 商业化/营销能力、契约升级、生态复核 | 按需 |
 
 依赖关系大体线性：M0 → M1 → M2 → M3 是地基链，必须按序完成；M4 之后的业务能力都依赖 M3，彼此可按价值调序，其中 M5 与 M6 互相独立，可并行或交换顺序。
