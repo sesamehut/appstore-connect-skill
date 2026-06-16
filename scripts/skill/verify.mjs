@@ -6,10 +6,11 @@
 //      template rendered with the dev profile — any hand-edit to the committed
 //      file without re-running skill:generate, or a template change that was not
 //      regenerated, fails here.
-//   2. The plugin profile, rendered in memory (it is never committed; it ships
-//      in the plugin payload at packaging time), has no leftover placeholder
-//      tokens, addresses the bundle via ${CLAUDE_PLUGIN_ROOT}/cli/asc.mjs, never
-//      references dist/cli/index.js, and shares an identical body with dev.
+//   2. The committed plugin SKILL.md inside the plugin/ payload is byte-equal
+//      (after LF-normalize) to the template rendered with the plugin profile,
+//      and that render has no leftover placeholder tokens, addresses the bundle
+//      via ${CLAUDE_PLUGIN_ROOT}/cli/asc.mjs, never references dist/cli/index.js,
+//      and shares an identical body with dev.
 //
 // Any missing template / missing committed file / mismatch exits non-zero.
 
@@ -19,6 +20,7 @@ import { readFile } from "node:fs/promises";
 import {
   DEV_SKILL_PATH,
   PLACEHOLDERS,
+  PLUGIN_SKILL_PATH,
   TEMPLATE_PATH,
   fail,
   normalizeLf,
@@ -35,6 +37,11 @@ if (!existsSync(DEV_SKILL_PATH)) {
     `Missing committed dev SKILL.md at ${DEV_SKILL_PATH}. Run \`npm run skill:generate\`.`,
   );
 }
+if (!existsSync(PLUGIN_SKILL_PATH)) {
+  fail(
+    `Missing committed plugin SKILL.md at ${PLUGIN_SKILL_PATH}. Run \`npm run package:plugin\`.`,
+  );
+}
 
 const template = normalizeLf(await readFile(TEMPLATE_PATH, "utf8"));
 const problems = [];
@@ -48,8 +55,15 @@ if (devCommitted !== devRendered) {
   );
 }
 
-// (2) Plugin profile rendered in memory.
+// (2) Committed plugin SKILL.md must equal the plugin render, and that render
+//     must itself be well-formed.
 const pluginRendered = render(template, "plugin");
+const pluginCommitted = normalizeLf(await readFile(PLUGIN_SKILL_PATH, "utf8"));
+if (pluginCommitted !== pluginRendered) {
+  problems.push(
+    `Committed plugin SKILL.md does not match the template's plugin render — it was hand-edited or the template changed without repackaging. Fix with \`npm run package:plugin\`.`,
+  );
+}
 
 for (const token of PLACEHOLDERS) {
   if (pluginRendered.includes(token)) {
@@ -94,5 +108,5 @@ if (problems.length > 0) {
 }
 
 console.log(
-  `SKILL.md verified: committed dev matches the dev render and the plugin render is well-formed (shared body identical across both variants).`,
+  `SKILL.md verified: committed dev and plugin SKILL.md both match their renders, the plugin render is well-formed (shared body identical across both variants).`,
 );

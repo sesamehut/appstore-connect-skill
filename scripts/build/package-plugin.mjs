@@ -1,15 +1,21 @@
-// Assemble the FULL Claude Code plugin payload into a gitignored staging dir
-// (dist/plugin/) from a single source, then secret-scan it fail-closed.
+// Assemble the FULL Claude Code plugin payload into the COMMITTED plugin/ dir
+// from a single source, then secret-scan it fail-closed.
+//
+// plugin/ is the git-subdir the marketplace points at, so it is tracked (unlike
+// the gitignored dist/ build output): regenerating it produces a reviewable diff
+// that is committed alongside the source that produced it. The marketplace does
+// a sparse clone of only this subdirectory, so the repo root (which physically
+// holds a real AuthKey_*.p8 and .env.local, both gitignored but on disk) is
+// never fetched by consumers.
 //
 // CRITICAL: assembly is an EXPLICIT ALLOW-LIST — every output file is generated
-// or read by name here. It NEVER globs or recursively copies the repo root,
-// because the repo root physically holds a real AuthKey_*.p8 and .env.local
-// (both gitignored but on disk). A recursive copy would sweep those credentials
-// into the public plugin repo; enumerating the few files is the structural fix.
+// or read by name here. It NEVER globs or recursively copies the repo root, so
+// no on-disk credential can ever be swept into the committed payload;
+// enumerating the few files is the structural fix.
 //
 // The secret-scan is the mechanical backstop: even if assembly ever regressed,
 // a credential marker in the staging tree aborts packaging with a non-zero exit
-// so nothing can be published.
+// so nothing can be committed.
 
 import { spawnSync } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -27,7 +33,7 @@ import {
 } from "./plugin-payload.mjs";
 import { readTemplate, render } from "../skill/lib.mjs";
 
-const stagingDir = path.join(repoRoot, "dist", "plugin");
+const stagingDir = path.join(repoRoot, "plugin");
 const bundleSource = path.join(repoRoot, "dist", "bundle", "asc.mjs");
 
 function run(commandLine) {
@@ -52,8 +58,9 @@ function run(commandLine) {
 console.log("Building the self-contained CLI bundle...");
 run("npm run bundle");
 
-// 2. Render the plugin-profile SKILL.md in memory (never committed in the dev
-//    repo; it only exists inside the payload).
+// 2. Render the plugin-profile SKILL.md from the single template source. It is
+//    not committed in its own right under the dev tree; it exists only here and
+//    in the generated plugin/ payload (skill:verify keeps both renders honest).
 const template = await readTemplate();
 const pluginSkill = render(template, "plugin");
 if (pluginSkill.includes("{{")) {

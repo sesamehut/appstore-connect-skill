@@ -22,6 +22,19 @@ export const DEV_SKILL_PATH = path.resolve(
   "SKILL.md",
 );
 
+// The committed plugin SKILL.md inside the generated plugin/ payload. Since the
+// payload is committed in this repo (not only assembled at packaging time), the
+// verify gate holds it byte-equal to the plugin render too.
+export const PLUGIN_SKILL_PATH = path.resolve(
+  here,
+  "..",
+  "..",
+  "plugin",
+  "skills",
+  "app-store-connect",
+  "SKILL.md",
+);
+
 // The two — and only two — regions that differ between variants. Anything else
 // in the template is the shared body, rendered verbatim into both.
 export const PLACEHOLDERS = ["{{CLI_INVOCATION}}", "{{SETUP_BLOCK}}"];

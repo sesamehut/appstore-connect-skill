@@ -23,7 +23,7 @@
 | M5 | 报表工作流 | 销售/财务/分析报表下载链路 | 已完成（[阶段计划](archive/m5-report-workflows.md)） |
 | M6 | 媒体素材工作流 | 截图与预览上传链路 | 已完成（[阶段计划](archive/m6-media-workflows.md)） |
 | M7 | TestFlight 与送审准备 | 首期范围能力闭环 | 已完成（TestFlight [阶段计划](archive/m7-testflight.md) 与送审准备 [阶段计划](archive/m7-submission-release.md) 两半均已交付） |
-| M8 | Skill 完备化与发布 | 任务级能力打磨、打包与使用文档 | 已完成（[阶段计划](archive/m8-skill-packaging.md)；插件 [sesamehut/appstore-connect-plugin](https://github.com/sesamehut/appstore-connect-plugin) 经 [marketplace](https://github.com/sesamehut/plugins-marketplace) 分发，安装命令 `/plugin install app-store-connect@sesamehut-plugins`） |
+| M8 | Skill 完备化与发布 | 任务级能力打磨、打包与使用文档 | 已完成（[阶段计划](archive/m8-skill-packaging.md)；插件以单仓库 git-subdir 形态从本仓 `plugin/` 子目录经 [marketplace](https://github.com/sesamehut/plugins-marketplace) 分发，安装命令 `/plugin install app-store-connect@sesamehut-plugins`。M8 阶段计划记录的是当时的独立 plugin 仓库方案，后调整为单仓库 git-subdir，详见 [Skill 入口与 CLI 策略](../implementation/skill-interface.md)的分发路径） |
 | M9+ | 扩展与持续事项 | 商业化/营销能力、契约升级、生态复核 | 按需 |
 
 依赖关系大体线性：M0 → M1 → M2 → M3 是地基链，必须按序完成；M4 之后的业务能力都依赖 M3，彼此可按价值调序，其中 M5 与 M6 互相独立，可并行或交换顺序。
@@ -135,7 +135,7 @@
 
 **范围**：任务组织与描述打磨、输入校验、用户可读反馈的统一口径、使用文档（配置与凭据说明）、分发打包（单文件 CLI 产物与 plugin/marketplace 形式，见 [Skill 入口与 CLI 策略](../implementation/skill-interface.md)的运行环境保障）。
 
-**分发形态**：对外按官方 plugin 布局打包（清单 + `skills/` + 自带单文件 CLI，由 `${CLAUDE_PLUGIN_ROOT}` 寻址），经 marketplace 以独立 plugin 仓库分发，与既有 sesamehut marketplace 约定一致；不把开发仓库本身当 plugin。开发态项目级 skill 与分发态 plugin skill 并存，SKILL.md 内容保持单一来源以防漂移。官方无安装钩子，故"零安装步骤"完全依赖单文件 bundle。
+**分发形态**：对外按官方 plugin 布局打包（清单 + `skills/` + 自带单文件 CLI，由 `${CLAUDE_PLUGIN_ROOT}` 寻址），经 marketplace 分发，与既有 sesamehut marketplace 约定一致。分发采用单仓库形态：payload 提交于本仓 `plugin/` 子目录，marketplace 用 `git-subdir` 源指向它（不另立 plugin 仓库，详见 [Skill 入口与 CLI 策略](../implementation/skill-interface.md)的分发路径）。开发态项目级 skill 与分发态 plugin skill 并存，SKILL.md 内容保持单一来源以防漂移。官方无安装钩子，故"零安装步骤"完全依赖单文件 bundle。
 
 **退出标准**：
 

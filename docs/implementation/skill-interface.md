@@ -43,7 +43,9 @@ Skill 形态没有"保证脚本能跑"的官方机制（核实于 2026-06）：S
 
 ## 分发路径
 
-开发期作为项目级 Skill 存放于仓库内（随版本库提交），npm 依赖在 Skill 目录本地安装、不做全局安装；对外分发走 Claude Code 的 plugin/marketplace 机制，分发包内是打好的单文件 CLI。需要打包上传的运行面（claude.ai、Claude API）受网络与依赖限制，暂不作为分发目标。
+开发期作为项目级 Skill 存放于仓库内（随版本库提交），npm 依赖在 Skill 目录本地安装、不做全局安装；对外分发走 Claude Code 的 plugin/marketplace 机制，分发包内是打好的单文件 CLI。
+
+分发采用**单仓库**形态：插件 payload 由 `package:plugin` 生成并**提交**在本仓库的 `plugin/` 子目录，marketplace 用 `git-subdir` 源指向该子目录（稀疏检出只拉这一个目录）。如此源码、文档、测试与可安装产物同处一仓、同一历史，版本号与 SKILL.md 漂移可在本仓 `check` 内一并守卫；marketplace 的稀疏检出又把消费者可见面收敛到 `plugin/`，仓根的真实凭据（gitignored）永不进入分发面。曾经的"独立 plugin 产物仓库"方案要求每次发布跨仓同步、并把部分校验拆到仓外，已被单仓库取代；npm 作为 plugin 源虽受官方消费侧支持，但发布侧无文档、生态罕用，不予采用。需要打包上传的运行面（claude.ai、Claude API）受网络与依赖限制，暂不作为分发目标。
 
 ## 来源
 

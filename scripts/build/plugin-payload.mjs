@@ -1,9 +1,10 @@
 // Single source for every file the plugin payload contains. package-plugin.mjs
 // imports these builders and writes their output by an EXPLICIT allow-list into
-// the staging dir — it never globs or recursively copies the repo root, because
-// the repo root physically holds a real AuthKey_*.p8 and .env.local (both
-// gitignored but on disk). Enumerating the few generated files is the structural
-// guarantee that no credential can ever be swept into the public plugin repo.
+// the committed plugin/ dir — it never globs or recursively copies the repo
+// root, because the repo root physically holds a real AuthKey_*.p8 and
+// .env.local (both gitignored but on disk). Enumerating the few generated files
+// is the structural guarantee that no credential can ever be swept into the
+// committed plugin/ payload.
 
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
@@ -21,14 +22,14 @@ export const repoRoot = path.resolve(
 // sonara (plugin.json.name = `sonara`, repo = `sonara-plugin`).
 export const PLUGIN_NAME = "app-store-connect";
 
-// The plugin REPOSITORY name carries the `-plugin` suffix (mirroring sonara's
-// `sonara-plugin`), distinct from the short PLUGIN_NAME above.
-export const PLUGIN_REPO = "appstore-connect-plugin";
-
-// homepage/source target — the dedicated plugin repo on the sesamehut org, per
-// the M8 decision (the lanvada homepage in sonara's own plugin.json is a
-// personal-account leftover we deliberately do not follow).
-export const PLUGIN_REPO_URL = `https://github.com/sesamehut/${PLUGIN_REPO}`;
+// The development repo that owns source, docs, and tests. The plugin is
+// distributed single-repo: the payload lives in this repo's committed `plugin/`
+// subdirectory and the marketplace points at it via a git-subdir source — there
+// is no separate `-plugin` repo. homepage therefore targets the dev repo (the
+// lanvada homepage in sonara's own plugin.json is a personal-account leftover we
+// deliberately do not follow).
+export const SOURCE_REPO = "appstore-connect-skill";
+export const SOURCE_REPO_URL = `https://github.com/sesamehut/${SOURCE_REPO}`;
 
 async function packageJson() {
   return JSON.parse(
@@ -61,39 +62,39 @@ export async function buildPluginJson() {
     version: pkg.version,
     description: PLUGIN_DESCRIPTION,
     author: PLUGIN_AUTHOR,
-    homepage: PLUGIN_REPO_URL,
+    homepage: SOURCE_REPO_URL,
   };
 }
 
-// The plugin repo is a GENERATED artifact: maintainers change the upstream
-// development repo and re-run `npm run package:plugin`, never hand-edit here.
-// Mirrors sonara-plugin/CLAUDE.md framing (what this repo is / generated /
-// how to regenerate), in English (in-repo docs are English).
+// The plugin/ payload is a GENERATED artifact: maintainers change the source
+// (SKILL template, CLI, generators) and re-run `npm run package:plugin`, never
+// hand-edit the generated files. This CLAUDE.md ships inside the payload, so it
+// is written to make sense to someone who sparse-checked out only plugin/.
 export const PLUGIN_CLAUDE_MD = `# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
+code in this directory.
 
-## What this repo is
+## What this directory is
 
-\`appstore-connect-plugin\` is the **distribution artifact** for the App Store
-Connect skill: a Claude Code plugin that ships one self-contained CLI bundle
-(\`cli/asc.mjs\`) plus the skill definition that drives it. It is installed into
-Claude Code on the user's machine and run from there — it is not a development
-checkout.
+This is the **distribution payload** for the App Store Connect skill: a Claude
+Code plugin that ships one self-contained CLI bundle (\`cli/asc.mjs\`) plus the
+skill definition that drives it. It lives in the \`plugin/\` subdirectory of the
+\`appstore-connect-skill\` repository, and the marketplace installs it from there
+via a git-subdir source. It is what runs on the user's machine — not a
+development checkout.
 
-## This repo is GENERATED — do not hand-edit
+## This directory is GENERATED — do not hand-edit
 
 Every file here (\`.claude-plugin/plugin.json\`, \`skills/${PLUGIN_NAME}/SKILL.md\`,
 \`cli/asc.mjs\`, \`README.md\`, this \`CLAUDE.md\`, \`.gitignore\`, \`.gitattributes\`)
-is produced by the
-upstream development repo \`appstore-connect-skill\` via \`npm run package:plugin\`.
-Editing files here directly will be overwritten on the next release and will
-drift from the audited source.
+is produced from the surrounding \`appstore-connect-skill\` source by
+\`npm run package:plugin\`. Editing a file here directly will be overwritten on the
+next release and will drift from the audited source.
 
-To change anything: make the change upstream in \`appstore-connect-skill\`
-(SKILL.md template, CLI source, README/CLAUDE generators, plugin.json content)
-and re-run \`npm run package:plugin\`, then commit the regenerated payload here.
+To change anything: edit the source (SKILL.md template, CLI source,
+README/CLAUDE generators, plugin.json content) and re-run
+\`npm run package:plugin\`, then commit the regenerated payload.
 
 ## Conventions
 
@@ -102,10 +103,10 @@ and re-run \`npm run package:plugin\`, then commit the regenerated payload here.
   network access to App Store Connect.
 - The skill addresses the CLI via \`\${CLAUDE_PLUGIN_ROOT}/cli/asc.mjs\`; the
   installed plugin directory resolves \`\${CLAUDE_PLUGIN_ROOT}\` for you.
-- Credentials are read from environment variables only; this repo must never
+- Credentials are read from environment variables only; this payload must never
   contain a \`.p8\` key, a \`.env\` file, or any other credential (the \`.gitignore\`
-  enforces this mechanically, and the upstream packaging step secret-scans the
-  payload before it can be published).
+  enforces this mechanically, and the packaging step secret-scans the payload
+  before it can be committed).
 `;
 
 // `.gitignore` is the mechanical "no credentials in the repo" guard. It must
@@ -253,15 +254,15 @@ and whether your credentials are configured — no request is made to Apple.
 
 ## Versioning
 
-This plugin's version (\`${pkg.version}\`) is generated from the upstream
-development repo and kept in lockstep with the CLI's own reported version
+This plugin's version (\`${pkg.version}\`) is generated from the project source
+and kept in lockstep with the CLI's own reported version
 (\`node "\${CLAUDE_PLUGIN_ROOT}/cli/asc.mjs" --version\`).
 
 ## Maintainers
 
-This repository is a generated artifact — do not hand-edit it. See
-[CLAUDE.md](CLAUDE.md): change the upstream \`appstore-connect-skill\` repo and
-re-run \`npm run package:plugin\` to regenerate the payload.
+This directory is a generated artifact — do not hand-edit it. See
+[CLAUDE.md](CLAUDE.md): it is produced from the \`appstore-connect-skill\` source
+by \`npm run package:plugin\`, which regenerates the whole payload.
 `;
 }
 

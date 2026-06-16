@@ -140,16 +140,22 @@ Use a Testing Trophy bias: write tests, not too many, mostly integration.
   inlined (esbuild is a build-time devDependency only, never in `dependencies`).
   A build-time `__ASC_BUNDLED__` flag makes `doctor` self-aware so its dependency
   and build checks pass without a node_modules. `npm run package:plugin` then
-  assembles the full Claude Code plugin payload into `dist/plugin/` via an
-  EXPLICIT allow-list - it never globs the repo root, which physically holds a
-  real `.p8` and `.env.local` - and runs a fail-closed secret-scan over the
-  staging tree before the payload may ship. SKILL.md has a single source
-  (`scripts/skill/SKILL.template.md`): `skill:generate` renders the dev/plugin
-  variants and `skill:verify` (in `check`) fails closed if the committed dev
-  SKILL.md drifts from the template. `version:check` (in `check`) keeps
-  `package.json` version and `CLI_VERSION` (`src/cli/root.ts`) in lockstep; the
-  plugin.json and marketplace-entry versions are pre-publish gates. Both
-  `dist/bundle/` and `dist/plugin/` are gitignored generated artifacts.
+  assembles the full Claude Code plugin payload into the committed `plugin/`
+  directory via an EXPLICIT allow-list - it never globs the repo root, which
+  physically holds a real `.p8` and `.env.local` - and runs a fail-closed
+  secret-scan over the staging tree before the payload may be committed. The
+  plugin ships single-repo: `plugin/` is committed here and the marketplace
+  installs it via a `git-subdir` source (sparse-checkout of just that
+  subdirectory), so there is no separate plugin repo. SKILL.md has a single
+  source (`scripts/skill/SKILL.template.md`): `skill:generate` renders the
+  dev/plugin variants and `skill:verify` (in `check`) fails closed if either the
+  committed dev SKILL.md or the committed `plugin/` SKILL.md drifts from the
+  template. `version:check` (in `check`) keeps `package.json` version,
+  `CLI_VERSION` (`src/cli/root.ts`), and the committed
+  `plugin/.claude-plugin/plugin.json` in lockstep; the marketplace-entry version
+  is a pre-publish gate. `dist/bundle/` is a gitignored intermediate; `plugin/`
+  is the committed, byte-stable payload (excluded from lint/format/typecheck as a
+  generated artifact, like `src/generated/`).
 - **Generated contract changes** - regenerate with `npm run contract:update`
   (fetches the latest official Apple spec, regenerates `src/generated/`, and
   refreshes the metadata manifest). Generation is deterministic: re-running on
