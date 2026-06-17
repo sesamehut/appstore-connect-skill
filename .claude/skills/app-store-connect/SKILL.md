@@ -52,8 +52,9 @@ Run `capabilities` for the authoritative machine-readable map — do not guess.
 
 ## One-time setup
 
-Credentials come from environment variables; never write them to files in the
-repository, and never echo private key content.
+Credentials come from environment variables; never echo private key content,
+and never write them into a git-tracked file. The user supplies them — if they
+are missing, help the user set up (below) instead of giving up.
 
 | Variable | Meaning |
 | --- | --- |
@@ -77,6 +78,41 @@ node "${CLAUDE_SKILL_DIR}/../../../dist/cli/index.js" doctor
 ```
 
 `doctor` is offline and reports exactly what is missing and how to fix it.
+
+### Helping a user set up
+
+A credentials error (exit 2, or a failing `doctor` credentials check) usually
+means the user has not configured the key yet — walk them through it instead of
+stopping:
+
+1. **Get the values** from the App Store Connect locations noted above —
+   Integrations for the keys and Issuer ID, Payments and Financial Reports for the
+   optional vendor number; the `.p8` downloads once.
+2. **Pick where the credentials live, then set them there.** Offer the choice and
+   the trade-off:
+   - User-level Claude Code settings `env` block (`~/.claude/settings.json`, or
+     `%USERPROFILE%\.claude\settings.json`) — **recommended**: outside every git
+     repo, so the key can't be committed by accident.
+   - A project's gitignored `.claude/settings.local.json` `env` block — per
+     project; confirm it is ignored before committing.
+   - Shell `export` / `$env:` before launching — ephemeral, one session only.
+
+   `ASC_PRIVATE_KEY_PATH` (a path to the saved `.p8`) is simplest; `ASC_PRIVATE_KEY`
+   (the `.p8` on one line) also works — set exactly one. A settings `env` change
+   needs a Claude Code restart to load.
+3. **Re-run `doctor`** to confirm.
+
+Default to hands-off: tell the user exactly what to paste where, and let them
+paste it. You MAY write the file for them, but only after saying out loud that the
+private key will sit as plaintext on disk and getting explicit consent — and even
+then write only to a non-tracked file (user-level settings, or a gitignored
+`.claude/settings.local.json`), never a git-tracked file such as a project's
+shared `.claude/settings.json`, and never print the key back into the conversation.
+
+When the user picks a location, record that **preference** — the storage method
+only, never the key — to your memory, so a later setup skips the question. Do not
+record "setup done": whether credentials exist is always a live `doctor` check,
+not memory (a stale note misleads across machines and projects).
 
 ## Reading output
 
