@@ -17,7 +17,7 @@ import { versionsCommand } from "./commands/versions.js";
  * single-file bundle needs no filesystem access; a unit test pins it to the
  * package version.
  */
-export const CLI_VERSION = "0.1.0";
+export const CLI_VERSION = "0.1.1";
 
 // makePlannedCommand / planned.ts stay as harmless extension points: with the
 // submission domain now implemented, no domain is planned, so root wires only
