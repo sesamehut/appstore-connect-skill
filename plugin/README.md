@@ -115,7 +115,7 @@ credentials are configured — no request is made to Apple.
 
 - Version `0.1.0`, kept in lockstep with the CLI's own
   `node "${CLAUDE_PLUGIN_ROOT}/cli/asc.mjs" --version`.
-- Source & docs: <https://github.com/sesamehut/appstore-connect-skill> · License: MIT · Maintained by Sesame Hut.
+- Source & docs: <https://github.com/sesamehut/appstore-connect-skill> · License: [MIT](LICENSE) · Maintained by Sesame Hut.
 - This directory is a **generated artifact** — do not hand-edit it (see
   [CLAUDE.md](CLAUDE.md)); it is produced from the `appstore-connect-skill` source by
   `npm run package:plugin`.

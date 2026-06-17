@@ -25,6 +25,7 @@ import {
   PLUGIN_NAME,
   buildPluginJson,
   buildReadme,
+  buildLicense,
   PLUGIN_CLAUDE_MD,
   PLUGIN_GITIGNORE,
   PLUGIN_GITATTRIBUTES,
@@ -79,6 +80,7 @@ await mkdir(path.join(stagingDir, "cli"), { recursive: true });
 
 const pluginJson = await buildPluginJson();
 const readme = await buildReadme();
+const license = await buildLicense();
 const bundleBytes = await readFile(bundleSource);
 
 // EXPLICIT ALLOW-LIST: the only files written into the staging tree.
@@ -92,6 +94,7 @@ const written = [
   // is executable on POSIX, harmless on Windows.
   [path.join(stagingDir, "cli", "asc.mjs"), bundleBytes, { mode: 0o755 }],
   [path.join(stagingDir, "README.md"), readme],
+  [path.join(stagingDir, "LICENSE"), license],
   [path.join(stagingDir, "CLAUDE.md"), PLUGIN_CLAUDE_MD],
   [path.join(stagingDir, ".gitignore"), PLUGIN_GITIGNORE],
   [path.join(stagingDir, ".gitattributes"), PLUGIN_GITATTRIBUTES],

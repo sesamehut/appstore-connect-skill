@@ -15,8 +15,9 @@ development checkout.
 ## This directory is GENERATED — do not hand-edit
 
 Every file here (`.claude-plugin/plugin.json`, `skills/app-store-connect/SKILL.md`,
-`cli/asc.mjs`, `README.md`, this `CLAUDE.md`, `.gitignore`, `.gitattributes`)
-is produced from the surrounding `appstore-connect-skill` source by
+`cli/asc.mjs`, `README.md`, `LICENSE`, this `CLAUDE.md`, `.gitignore`,
+`.gitattributes`) is produced from the surrounding `appstore-connect-skill`
+source by
 `npm run package:plugin`. Editing a file here directly will be overwritten on the
 next release and will drift from the audited source.
 

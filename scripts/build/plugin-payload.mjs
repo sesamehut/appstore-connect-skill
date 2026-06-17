@@ -87,8 +87,9 @@ development checkout.
 ## This directory is GENERATED — do not hand-edit
 
 Every file here (\`.claude-plugin/plugin.json\`, \`skills/${PLUGIN_NAME}/SKILL.md\`,
-\`cli/asc.mjs\`, \`README.md\`, this \`CLAUDE.md\`, \`.gitignore\`, \`.gitattributes\`)
-is produced from the surrounding \`appstore-connect-skill\` source by
+\`cli/asc.mjs\`, \`README.md\`, \`LICENSE\`, this \`CLAUDE.md\`, \`.gitignore\`,
+\`.gitattributes\`) is produced from the surrounding \`appstore-connect-skill\`
+source by
 \`npm run package:plugin\`. Editing a file here directly will be overwritten on the
 next release and will drift from the audited source.
 
@@ -273,11 +274,20 @@ credentials are configured — no request is made to Apple.
 
 - Version \`${pkg.version}\`, kept in lockstep with the CLI's own
   \`node "\${CLAUDE_PLUGIN_ROOT}/cli/asc.mjs" --version\`.
-- Source & docs: <${SOURCE_REPO_URL}> · License: MIT · Maintained by Sesame Hut.
+- Source & docs: <${SOURCE_REPO_URL}> · License: [MIT](LICENSE) · Maintained by Sesame Hut.
 - This directory is a **generated artifact** — do not hand-edit it (see
   [CLAUDE.md](CLAUDE.md)); it is produced from the \`${SOURCE_REPO}\` source by
   \`npm run package:plugin\`.
 `;
+}
+
+/**
+ * The plugin LICENSE, copied verbatim from the repo-root LICENSE so the
+ * distributed payload carries the same MIT terms under a single source of truth
+ * (the root LICENSE file) rather than a second hand-maintained copy.
+ */
+export async function buildLicense() {
+  return readFile(path.join(repoRoot, "LICENSE"), "utf8");
 }
 
 // Credential markers the secret-scan rejects. (a) filename patterns; (b) a
