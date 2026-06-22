@@ -1,6 +1,6 @@
 ---
 name: app-store-connect
-description: Operates Apple App Store Connect through a bundled CLI. Lists apps and App Store versions; reads and updates store metadata and localizations (description, keywords, what's new, promotional text, app name, subtitle, privacy policy); adds new locales; reads customer reviews and posts or replaces developer responses; downloads sales, finance, and analytics reports to disk; uploads, lists, reorders, and deletes App Store screenshots and preview videos; manages TestFlight beta groups, testers, test info, beta review detail and submission, and reads/downloads beta feedback; lists builds, resolves the latest processed build, edits build distribution and notes, and expires builds; runs an App Store submission-readiness preflight, sets review contact/demo detail, configures release timing and the export-compliance flag, reads submission status, and submits, cancels, or releases a version for App Review. Use when the user asks about App Store Connect, ASC, app metadata, store listings, localization, customer reviews, review replies, sales or download numbers, finance reports, analytics, TestFlight, beta testers, beta groups, beta feedback, builds, App Store reports, screenshots, preview videos, submitting an app for review, App Review, release timing, export compliance, or releasing a version.
+description: Operates Apple App Store Connect through a bundled CLI. Lists apps and App Store versions; reads and updates store metadata and localizations (description, keywords, what's new, promotional text, app name, subtitle, privacy policy); adds new locales; reads customer reviews and posts or replaces developer responses; downloads sales, finance, and analytics reports to disk; uploads, lists, reorders, and deletes App Store screenshots and preview videos; manages TestFlight beta groups, testers, test info, beta review detail and submission, and reads/downloads beta feedback; lists builds, resolves the latest processed build, edits build distribution and notes, and expires builds; runs an App Store submission-readiness preflight, sets review contact/demo detail, configures release timing and the export-compliance flag, reads submission status, and submits, cancels, or releases a version for App Review; verifies credentials against the live App Store Connect API. Use when the user asks about App Store Connect, ASC, app metadata, store listings, localization, customer reviews, review replies, sales or download numbers, finance reports, analytics, TestFlight, beta testers, beta groups, beta feedback, builds, App Store reports, screenshots, preview videos, submitting an app for review, App Review, release timing, export compliance, releasing a version, or checking that App Store Connect API credentials work.
 compatibility: Requires Node.js >=22.12 and network access to api.appstoreconnect.apple.com. Runs on the user's machine in any agent that can execute the bundled CLI; not bound to Claude Code.
 ---
 
@@ -31,6 +31,7 @@ list-crashes/list-screenshots/get-crash/get-screenshot/download), `builds`
 `pre-release-versions` list), `submission` (`preflight`; `status` list/get;
 `review-detail` get/set; `release-config` set; `export-compliance` set;
 `submit`/`cancel`/`release` — high side effect, `--force`), `doctor`,
+`auth` (`check` — one live read to confirm the credentials authenticate),
 `capabilities`.
 
 **Not implemented here yet** (the CLI answers these with exit code 5 and the
@@ -68,7 +69,10 @@ the API cannot read it.
 
 {{SETUP_BLOCK}}
 
-`doctor` is offline and reports exactly what is missing and how to fix it.
+`doctor` is offline and reports exactly what is missing and how to fix it (it
+also warns when a Key ID and Issuer ID look swapped, or a private key looks
+quoted or non-PEM). `auth check` is the online counterpart: one harmless read
+that proves the credentials actually authenticate and the key's role can read.
 
 ### Helping a user set up
 
@@ -91,7 +95,13 @@ stopping:
    `ASC_PRIVATE_KEY_PATH` (a path to the saved `.p8`) is simplest; `ASC_PRIVATE_KEY`
    (the `.p8` on one line) also works — set exactly one. A settings `env` change
    needs a Claude Code restart to load.
-3. **Re-run `doctor`** to confirm.
+3. **Re-run `doctor`, then `auth check`** to confirm. `doctor` proves the
+   variables are present and well-formed offline; `auth check` proves they
+   actually authenticate against Apple. A 401 there usually means a wrong or
+   revoked key (or, for a non-coder, an inaccurate computer clock); a 403 means
+   the key's role is too narrow — note that a non-Admin user can self-generate
+   an **individual key** under Users and Access → Integrations without needing
+   the account holder.
 
 Default to hands-off: tell the user exactly what to paste where, and let them
 paste it. You MAY write the file for them, but only after saying out loud that the
@@ -135,6 +145,8 @@ Exit codes:
 
 | Task | Command |
 | --- | --- |
+| Check the environment (offline) | `doctor` |
+| Confirm credentials work against Apple (live) | `auth check` |
 | Find an app | `apps list --bundle-id com.example.app` |
 | Read app details | `apps get <appId>` |
 | List versions / find the editable one | `versions list --app <appId> --state PREPARE_FOR_SUBMISSION` |

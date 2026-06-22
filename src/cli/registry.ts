@@ -46,6 +46,12 @@ export const DOMAINS: readonly DomainEntry[] = [
     status: { implemented: true },
   },
   {
+    name: "auth",
+    summary:
+      "Verify credentials against the live ASC API with one harmless read",
+    status: { implemented: true },
+  },
+  {
     name: "capabilities",
     summary: "Machine-readable map of implemented/planned/unsupported tasks",
     status: { implemented: true },

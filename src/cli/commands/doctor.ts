@@ -12,7 +12,8 @@ import {
 
 /**
  * Offline self-check: "what is missing and how to fix it". Deliberately makes
- * no network request — live verification belongs to `npm run smoke`.
+ * no network request — live verification belongs to `asc auth check` (one
+ * harmless read) or `npm run smoke` (a broader real-credential sweep).
  *
  * Returns the exit code through the context (main.ts owns process exit
  * semantics): 0 all green, 2 otherwise.

@@ -2738,14 +2738,17 @@ var init_client = __esm({
 
 // dist/cli/context.js
 function createCliContext(io, env) {
+  let credentialsPromise;
   let clientPromise;
   let lastSnapshot;
+  const credentials = () => credentialsPromise ??= loadAscCredentialsFromEnv(env);
   return {
     io,
     env,
+    credentials,
     client: () => {
-      clientPromise ??= loadAscCredentialsFromEnv(env).then((credentials) => createAscClient({
-        credentials,
+      clientPromise ??= credentials().then((loaded) => createAscClient({
+        credentials: loaded,
         onRateLimit: (snapshot) => {
           lastSnapshot = snapshot;
         }
@@ -2881,7 +2884,7 @@ function hintFor(error) {
     case "credential":
       return CREDENTIAL_HINTS["missing-key-id"];
     case "authentication":
-      return "Verify the key ID, issuer ID, and private key belong to the same App Store Connect API key, and that the key has not been revoked.";
+      return "Verify the key ID, issuer ID, and private key belong to the same App Store Connect API key, and that the key has not been revoked. If they are correct, check your computer's clock \u2014 a clock off by more than a few minutes makes Apple reject the signed token.";
     case "permission":
       return "The API key's role does not cover this operation. Ask the account holder to grant a broader role, or use a different key.";
     case "not-found":
@@ -3262,6 +3265,55 @@ var init_apps2 = __esm({
       subCommands: {
         list: listCommand,
         get: getCommand
+      }
+    });
+  }
+});
+
+// dist/cli/commands/auth.js
+var checkCommand, authCommand;
+var init_auth = __esm({
+  "dist/cli/commands/auth.js"() {
+    "use strict";
+    init_dist();
+    init_apps();
+    init_context();
+    init_output();
+    checkCommand = defineCommand({
+      meta: {
+        name: "check",
+        description: "Verify credentials against the live ASC API with one harmless read (the online counterpart to doctor)"
+      },
+      async run(ctx) {
+        const cli = cliContextOf(ctx.data);
+        const credentials = await cli.credentials();
+        const read = await listApps(await cli.client(), {
+          scope: "single-page",
+          pageLimit: 1
+        });
+        emitResult(cli.io, {
+          ok: true,
+          command: "auth check",
+          data: {
+            authenticated: true,
+            keyForm: credentials.keyForm,
+            // Only the last four characters — never the full Key ID.
+            keyId: `...${credentials.keyId.slice(-4)}`,
+            // ASC's own estimate when the page reports it; otherwise fall back to
+            // what this page already proves the key can see.
+            appsVisible: read.total ?? read.items.length
+          },
+          ...read.rateLimit !== void 0 && { rateLimit: read.rateLimit }
+        });
+      }
+    });
+    authCommand = defineCommand({
+      meta: {
+        name: "auth",
+        description: "Verify credentials against the live ASC API: check"
+      },
+      subCommands: {
+        check: checkCommand
       }
     });
   }
@@ -4754,6 +4806,11 @@ var init_registry = __esm({
         status: { implemented: true }
       },
       {
+        name: "auth",
+        summary: "Verify credentials against the live ASC API with one harmless read",
+        status: { implemented: true }
+      },
+      {
         name: "capabilities",
         summary: "Machine-readable map of implemented/planned/unsupported tasks",
         status: { implemented: true }
@@ -4848,6 +4905,66 @@ var init_capabilities = __esm({
         });
       }
     });
+  }
+});
+
+// dist/auth/credential-format.js
+function inspectCredentialFormat(env) {
+  const warnings = [];
+  const keyId = env[KEY_ID]?.trim();
+  const issuerId = env[ISSUER_ID]?.trim();
+  const keyLooksLikeIssuer = keyId !== void 0 && keyId !== "" && UUID_SHAPE.test(keyId);
+  const issuerLooksLikeKey = issuerId !== void 0 && issuerId !== "" && KEY_ID_SHAPE.test(issuerId);
+  if (keyLooksLikeIssuer && issuerLooksLikeKey) {
+    warnings.push({
+      code: "key-issuer-swapped",
+      message: `${KEY_ID} holds a UUID and ${ISSUER_ID} holds a 10-character code \u2014 these look swapped. ${KEY_ID} is the short 10-character Key ID shown next to the key; ${ISSUER_ID} is the UUID shown above the keys list in Users and Access \u2192 Integrations.`
+    });
+    return warnings;
+  }
+  if (keyLooksLikeIssuer) {
+    warnings.push({
+      code: "key-id-looks-like-issuer-id",
+      message: `${KEY_ID} looks like a UUID, which is the shape of an Issuer ID, not a Key ID. Copy the short 10-character Key ID shown next to the key in Users and Access \u2192 Integrations; for a Team key the UUID belongs in ${ISSUER_ID}.`
+    });
+  } else if (keyId !== void 0 && keyId !== "" && !KEY_ID_SHAPE.test(keyId)) {
+    warnings.push({
+      code: "key-id-unusual-format",
+      message: `${KEY_ID} is not the usual 10-character Key ID format; double-check you copied the Key ID itself (not the key's name).`
+    });
+  }
+  if (issuerId !== void 0 && issuerId !== "" && !UUID_SHAPE.test(issuerId)) {
+    warnings.push({
+      code: "issuer-id-not-uuid",
+      message: issuerLooksLikeKey ? `${ISSUER_ID} looks like a 10-character Key ID, not the expected UUID. The Issuer ID is the UUID shown above the keys list in Users and Access \u2192 Integrations; an individual key has no Issuer ID (leave ${ISSUER_ID} unset).` : `${ISSUER_ID} is not in UUID format. The Issuer ID is the UUID shown above the API keys list in Users and Access \u2192 Integrations; an individual key has no Issuer ID (leave ${ISSUER_ID} unset).`
+    });
+  }
+  return warnings;
+}
+function inspectInlinePrivateKey(raw) {
+  if (raw === void 0) {
+    return void 0;
+  }
+  const value = raw.trim();
+  if (value === "") {
+    return void 0;
+  }
+  if (/^["']/.test(value) || /["']$/.test(value)) {
+    return `${PRIVATE_KEY} appears wrapped in quotes \u2014 remove the surrounding " or ' so the value begins with "-----BEGIN".`;
+  }
+  if (!value.includes("-----BEGIN")) {
+    return `${PRIVATE_KEY} does not contain a "-----BEGIN ...-----" line; paste the full contents of the .p8 file, or set ${ASC_ENV_VARS.privateKeyPath} to the file path instead.`;
+  }
+  return void 0;
+}
+var KEY_ID_SHAPE, UUID_SHAPE, KEY_ID, ISSUER_ID, PRIVATE_KEY;
+var init_credential_format = __esm({
+  "dist/auth/credential-format.js"() {
+    "use strict";
+    init_credentials();
+    KEY_ID_SHAPE = /^[A-Za-z0-9]{10}$/;
+    UUID_SHAPE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    ({ keyId: KEY_ID, issuerId: ISSUER_ID, privateKey: PRIVATE_KEY } = ASC_ENV_VARS);
   }
 });
 
@@ -7549,10 +7666,12 @@ async function checkBuild() {
 async function checkCredentials(env) {
   try {
     const credentials = await loadAscCredentialsFromEnv(env);
+    const warnings = inspectCredentialFormat(env).map((warning) => warning.message);
     return {
       name: "credentials",
       status: "pass",
-      detail: `Loaded a ${credentials.keyForm} key (key id ending ...${credentials.keyId.slice(-4)})`
+      detail: `Loaded a ${credentials.keyForm} key (key id ending ...${credentials.keyId.slice(-4)})`,
+      ...warnings.length > 0 && { warnings }
     };
   } catch (error) {
     if (error instanceof AscCredentialError) {
@@ -7560,7 +7679,7 @@ async function checkCredentials(env) {
         name: "credentials",
         status: "fail",
         detail: error.message,
-        fix: credentialFix(error)
+        fix: credentialFix(error, env)
       };
     }
     throw error;
@@ -7574,7 +7693,7 @@ function checkVendorNumber(env) {
     detail: vendor === void 0 || vendor === "" ? `${ASC_VENDOR_NUMBER_ENV} is not set (optional; sales/finance report downloads need it via this variable or --vendor)` : `${ASC_VENDOR_NUMBER_ENV} is set (ending ...${vendor.slice(-4)})`
   };
 }
-function credentialFix(error) {
+function credentialFix(error, env) {
   switch (error.reason) {
     case "missing-key-id":
       return `Set ${ASC_ENV_VARS.keyId}. Keys live in App Store Connect \u2192 Users and Access \u2192 Integrations.`;
@@ -7584,8 +7703,11 @@ function credentialFix(error) {
       return `Unset one of ${ASC_ENV_VARS.privateKey} / ${ASC_ENV_VARS.privateKeyPath}.`;
     case "unreadable-private-key-file":
       return `Fix the path in ${ASC_ENV_VARS.privateKeyPath} so the .p8 file is readable.`;
-    case "invalid-private-key":
-      return "Use the unmodified .p8 file content downloaded from App Store Connect.";
+    case "invalid-private-key": {
+      const hint = inspectInlinePrivateKey(env[ASC_ENV_VARS.privateKey]);
+      const generic = "Use the unmodified .p8 file content downloaded from App Store Connect.";
+      return hint === void 0 ? generic : `${hint} ${generic}`;
+    }
   }
 }
 var MIN_NODE_VERSION, BUNDLED_DETAIL;
@@ -7593,6 +7715,7 @@ var init_preflight = __esm({
   "dist/cli/preflight.js"() {
     "use strict";
     init_credentials();
+    init_credential_format();
     init_errors();
     init_report_flags();
     MIN_NODE_VERSION = "22.12.0";
@@ -7629,6 +7752,9 @@ var init_doctor = __esm({
           cli.io.err(`${check.status === "pass" ? "ok " : "FAIL"} ${check.name}: ${check.detail}`);
           if (check.fix !== void 0) {
             cli.io.err(`     fix: ${check.fix}`);
+          }
+          for (const warning of check.warnings ?? []) {
+            cli.io.err(`     warn: ${warning}`);
           }
         }
         return ok ? EXIT.success : EXIT.configuration;
@@ -11973,6 +12099,7 @@ var init_root = __esm({
     "use strict";
     init_dist();
     init_apps2();
+    init_auth();
     init_builds2();
     init_capabilities();
     init_doctor();
@@ -11996,6 +12123,7 @@ var init_root = __esm({
         metadata: metadataCommand,
         reviews: reviewsCommand,
         doctor: doctorCommand,
+        auth: authCommand,
         capabilities: capabilitiesCommand,
         reports: reportsCommand,
         media: mediaCommand,

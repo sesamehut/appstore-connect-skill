@@ -1,4 +1,5 @@
 import { loadAscCredentialsFromEnv } from "../auth/credentials.js";
+import type { AscCredentials } from "../auth/credentials.js";
 import { createAscClient } from "../http/client.js";
 import type { AscClient } from "../http/client.js";
 import type { RateLimitSnapshot } from "../http/rate-limit.js";
@@ -15,9 +16,12 @@ export interface CliContext {
   readonly io: CliIo;
   readonly env: Readonly<Record<string, string | undefined>>;
   /**
-   * Lazily creates (then reuses) the ASC client, so credential-free commands
-   * (doctor, capabilities, --help) never touch the environment.
+   * Lazily loads (then reuses) the credentials, so credential-free commands
+   * (doctor, capabilities, --help) never touch the environment, and a command
+   * that needs both the credentials and the client imports the key only once.
    */
+  readonly credentials: () => Promise<AscCredentials>;
+  /** Lazily creates (then reuses) the ASC client over those credentials. */
   readonly client: () => Promise<AscClient>;
   /** Latest quota snapshot observed on any response this invocation. */
   readonly lastRateLimit: () => RateLimitSnapshot | undefined;
@@ -27,16 +31,21 @@ export function createCliContext(
   io: CliIo,
   env: Readonly<Record<string, string | undefined>>,
 ): CliContext {
+  let credentialsPromise: Promise<AscCredentials> | undefined;
   let clientPromise: Promise<AscClient> | undefined;
   let lastSnapshot: RateLimitSnapshot | undefined;
+
+  const credentials = () =>
+    (credentialsPromise ??= loadAscCredentialsFromEnv(env));
 
   return {
     io,
     env,
+    credentials,
     client: () => {
-      clientPromise ??= loadAscCredentialsFromEnv(env).then((credentials) =>
+      clientPromise ??= credentials().then((loaded) =>
         createAscClient({
-          credentials,
+          credentials: loaded,
           onRateLimit: (snapshot) => {
             lastSnapshot = snapshot;
           },

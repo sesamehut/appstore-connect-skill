@@ -278,4 +278,27 @@ describe("doctor", () => {
     const report = parseEnvelope(captured);
     expect(report.ok).toBe(true);
   });
+
+  it("still passes but warns when the key id and issuer id look swapped", async () => {
+    // The key loads (the loader accepts any non-empty key id), so doctor stays
+    // green; the format heuristic flags the likely swap as a non-fatal warning.
+    const swapped = {
+      ...env,
+      ASC_KEY_ID: env.ASC_ISSUER_ID ?? "",
+      ASC_ISSUER_ID: "TESTKEY1D2",
+    };
+    const captured = makeIo();
+    const exit = await runCli(["doctor"], captured.io, swapped);
+
+    expect(exit).toBe(0);
+    const report = parseEnvelope(captured);
+    expect(report.ok).toBe(true);
+    const credentials = (
+      report.data as {
+        checks: { name: string; warnings?: string[] }[];
+      }
+    ).checks.find((check) => check.name === "credentials");
+    expect(credentials?.warnings?.[0]).toContain("swapped");
+    expect(captured.err.some((line) => line.includes("warn:"))).toBe(true);
+  });
 });

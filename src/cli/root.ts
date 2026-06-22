@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 
 import { appsCommand } from "./commands/apps.js";
+import { authCommand } from "./commands/auth.js";
 import { buildsCommand } from "./commands/builds.js";
 import { capabilitiesCommand } from "./commands/capabilities.js";
 import { doctorCommand } from "./commands/doctor.js";
@@ -36,6 +37,7 @@ export const rootCommand = defineCommand({
     metadata: metadataCommand,
     reviews: reviewsCommand,
     doctor: doctorCommand,
+    auth: authCommand,
     capabilities: capabilitiesCommand,
     reports: reportsCommand,
     media: mediaCommand,

@@ -150,7 +150,7 @@ function hintFor(error: AscError): string {
       // Unreachable: every credential error is an AscCredentialError.
       return CREDENTIAL_HINTS["missing-key-id"];
     case "authentication":
-      return "Verify the key ID, issuer ID, and private key belong to the same App Store Connect API key, and that the key has not been revoked.";
+      return "Verify the key ID, issuer ID, and private key belong to the same App Store Connect API key, and that the key has not been revoked. If they are correct, check your computer's clock — a clock off by more than a few minutes makes Apple reject the signed token.";
     case "permission":
       return "The API key's role does not cover this operation. Ask the account holder to grant a broader role, or use a different key.";
     case "not-found":
