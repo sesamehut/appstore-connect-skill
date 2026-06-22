@@ -12110,7 +12110,7 @@ var init_root = __esm({
     init_submission();
     init_testflight();
     init_versions();
-    CLI_VERSION = "0.1.1";
+    CLI_VERSION = "0.2.0";
     rootCommand = defineCommand({
       meta: {
         name: "asc",

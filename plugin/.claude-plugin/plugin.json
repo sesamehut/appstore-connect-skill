@@ -1,6 +1,6 @@
 {
   "name": "app-store-connect",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Operate Apple App Store Connect from Claude Code: list apps and versions, edit store metadata and localizations, reply to reviews, download sales/finance/analytics reports, manage screenshots, previews, TestFlight, builds, and App Store submission and release.",
   "author": {
     "name": "Zehua Hu",
