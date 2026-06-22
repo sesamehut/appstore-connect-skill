@@ -1,11 +1,13 @@
 # App Store Connect plugin
 
-Work with Apple **App Store Connect** from Claude Code, without clicking through
-the website or writing one-off API scripts. This plugin includes a
-self-contained CLI plus the skill that calls it: list apps, edit store metadata
-and localizations, reply to reviews, download sales / finance / analytics
-reports, manage screenshots and previews, handle TestFlight, builds, and
-feedback, and run App Store submission and release steps.
+**An AI-native App Store Connect skill — built for the people shipping apps with
+vibe coding.** Work with Apple **App Store Connect** from Claude Code in plain
+language, without clicking through the website or writing one-off API scripts:
+you built the app with AI, so run the App Store Connect side of it the same way.
+This plugin includes a self-contained CLI plus the skill that calls it: list
+apps, edit store metadata and localizations, reply to reviews, download sales /
+finance / analytics reports, manage screenshots and previews, handle TestFlight,
+builds, and feedback, and run App Store submission and release steps.
 
 Independent open-source project — **not affiliated with or endorsed by Apple**.
 **Claude Code only** (not packaged for Codex / Gemini).
@@ -14,6 +16,7 @@ Independent open-source project — **not affiliated with or endorsed by Apple**
 
 | | |
 | --- | --- |
+| **Who it's for** | Product managers, designers, and makers shipping apps with vibe coding — no command line, no scripts, no API docs; professional developers too |
 | **Requires** | Node.js >= 22.12, an App Store Connect API key, network access to `api.appstoreconnect.apple.com` |
 | **Install** | `/plugin marketplace add sesamehut/plugins-marketplace` -> `/plugin install app-store-connect@sesamehut-plugins` |
 | **Setup** | No `npm install` and nothing to build; the CLI is already bundled |
@@ -94,7 +97,9 @@ your consent, can fill it in.
 
 - **Official Apple software?** No — independent and open-source, built on Apple's
   official API.
-- **Need to code?** No — you ask in Claude Code; the skill calls the CLI.
+- **Need to code?** No — you ask in plain language and the skill calls the CLI.
+  Built for vibe-coding builders (product managers, designers, indie makers), not
+  just engineers.
 - **Where do my credentials go?** The skill only reads them from environment
   variables — it never writes your key to disk. You choose where the variables
   live; the **Credentials** section recommends a git-safe spot.

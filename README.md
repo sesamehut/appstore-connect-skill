@@ -2,6 +2,8 @@
 
 _for Claude Code, Codex, Cursor, and other AI agents_
 
+**An AI-native App Store Connect skill — built for the people shipping apps with vibe coding.**
+
 <!--
 App Store Connect CLI and AI-agent skill. Operate and manage the Apple App Store
 Connect API from the command line or an AI agent: automate App Store metadata and
@@ -12,26 +14,31 @@ Portable across AI agents — Claude Code, OpenAI Codex, Cursor, Gemini CLI, and
 more — not locked to Claude Code. Not an MCP server, not a CI/CD pipeline, not
 affiliated with Apple. Related terms: App Store Connect automation, ASC API
 command-line tool, iOS app release automation, App Store Connect agent / skill,
-App Store Connect API CLI.
+App Store Connect API CLI, AI-native App Store Connect, vibe coding app release,
+App Store Connect for product managers and designers.
 -->
 
-> Operate the App Store Connect API from the command line or an AI agent —
-> manage apps, store metadata, reviews, reports, TestFlight, and releases
-> without clicking through the website or writing one-off API scripts.
+> Built for AI agents: turn one plain-English sentence — _"reply to my newest
+> 1-star review," "download yesterday's sales report," "change the German
+> keywords"_ — into precise calls to Apple's official App Store Connect API. No
+> clicking through the website, no scripts, no command line.
 
-**App Store Connect Agent Skill** (plugin: `app-store-connect`) is an open-source
-command-line tool for operating the Apple [App Store
-Connect](https://appstoreconnect.apple.com) API from an AI agent. It lets you
-**operate and manage App Store Connect with an AI agent** in plain language: list
-apps, edit store listings and localizations, reply to reviews, download
-sales/finance/analytics reports, manage screenshots and TestFlight, and submit
-or release a version. In [Claude Code](https://claude.com/claude-code), each
-request — *"reply to my newest 1-star review," "download yesterday's sales
-report," "update the German keywords"* — maps to the bundled, JSON-emitting CLI,
-which then reports the result. It isn't a thin HTTP wrapper: requests map to
-task-shaped commands, with the raw API mechanics kept in the runtime layer.
-Built on Apple's **official** API contract: no third-party ASC SDK, no server,
-no project-level `npm install`.
+**App Store Connect Agent Skill** (plugin: `app-store-connect`) is an open-source,
+**AI-native** command-line tool for operating the Apple [App Store
+Connect](https://appstoreconnect.apple.com) API from an AI agent — designed for
+agents, not retrofitted with an agent wrapper. It lets you **operate and manage
+App Store Connect in plain language**: list apps, edit store listings and
+localizations, reply to reviews, download sales/finance/analytics reports, manage
+screenshots and TestFlight, and submit or release a version. It's a natural fit
+for the people **shipping apps with vibe coding** — product managers, designers,
+indie makers, and builders from every field who turn ideas into apps with AI: you
+built the app with AI, so run the App Store Connect side of it the same way. Even
+first-time credential setup is walked through conversationally by the agent. In
+[Claude Code](https://claude.com/claude-code), each request maps to the bundled,
+JSON-emitting CLI, which then reports the result. It isn't a thin HTTP wrapper:
+requests map to task-shaped commands, with the raw API mechanics kept in the
+runtime layer. Built on Apple's **official** API contract: no third-party ASC SDK,
+no server, no project-level `npm install`.
 
 > Independent open-source project — **not affiliated with or endorsed by Apple**.
 > **Not locked to Claude Code** — though Claude Code is the one-command install
@@ -42,8 +49,8 @@ no project-level `npm install`.
 | | |
 |---|---|
 | **What it is** | A command-line tool and portable Agent Skill that drives — and automates — App Store Connect work via Apple's official API |
-| **Who it's for** | iOS / macOS / tvOS / visionOS developers and publishers who use Claude Code (or another skills-compatible agent) |
-| **How you use it** | Natural-language requests in Claude Code (which calls the bundled command-line tool for you) |
+| **Who it's for** | The people shipping apps with vibe coding — product managers, designers, and makers from every field who turn ideas into apps with AI; professional developers too |
+| **How you use it** | Natural-language requests in your AI agent, which calls the bundled command-line tool for you (you never touch it directly) |
 | **Works in** | Claude Code, Codex, Cursor, Gemini CLI, and other AI agents — not Claude-only |
 | **Not an** | MCP server, CI/CD pipeline, or official Apple tool |
 | **Requires** | Node.js ≥ 22.12, an App Store Connect API key, network access |
@@ -71,6 +78,12 @@ version X ready to submit? Run the preflight."*
 
 ## Why developers choose it
 
+- **AI-native — natural language _is_ the interface.** Built for the people
+  shipping apps with vibe coding: product managers, designers, and makers from
+  every field who turn ideas into apps with AI. You built the app with AI; run
+  the App Store Connect side — submitting, fixing copy, replying to reviews,
+  pulling reports — the same way. No command line, no scripts, no API docs; even
+  setup is conversational.
 - **Plain English → typed commands.** You describe the task; the skill maps it
   to a specific command with explicit arguments — not a free-form HTTP wrapper.
 - **Structured, parseable output.** The CLI emits JSON the agent can read,
