@@ -110,7 +110,7 @@ your consent, can fill it in.
 
 ## Versioning, source & license
 
-- Version `0.2.0`, kept in lockstep with the CLI's own
+- Version `0.2.1`, kept in lockstep with the CLI's own
   `node "${CLAUDE_PLUGIN_ROOT}/cli/asc.mjs" --version`.
 - Source & docs: <https://github.com/sesamehut/appstore-connect-skill> · License: [MIT](LICENSE) · Maintained by Sesame Hut.
 - This directory is a **generated artifact** — do not hand-edit it (see
