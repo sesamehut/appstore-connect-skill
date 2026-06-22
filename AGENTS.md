@@ -1,11 +1,14 @@
 # appstore-connect-skill - workspace notes for agents
 
-A Claude Skill that drives the Apple **App Store Connect (ASC) API** from Node.js
-/ TypeScript. The skill stands on Apple's official API contract plus a thin
-hand-written runtime layer; it intentionally avoids any third-party ASC SDK.
-Product scope, architecture, implementation strategy, and supporting research
-live under [`docs/`](docs/). Design decisions are integrated into the
-architecture docs instead of kept as standalone decision files.
+A Claude Skill that lets non-coders drive the Apple app release lifecycle
+through natural language. The core drives the Apple **App Store Connect (ASC)
+API** from Node.js / TypeScript on Apple's official API contract plus a thin
+hand-written runtime layer, with no third-party ASC SDK; the vision also reaches
+local Apple-toolchain orchestration, a wider trust boundary kept outside the
+contract (see architecture rules). Product scope, architecture, implementation
+strategy, and supporting research live under [`docs/`](docs/). Design decisions
+are integrated into the architecture docs instead of kept as standalone decision
+files.
 
 ## Communication
 
@@ -40,6 +43,11 @@ architecture docs instead of kept as standalone decision files.
   architecture docs before relying on it.
 - Skill-facing operations should model user tasks, not leak raw HTTP mechanics.
   Low-level request details belong in the runtime layer and diagnostics.
+- Capabilities outside the ASC REST API (Apple Search Ads, local-toolchain
+  orchestration) live outside the generated contract. Treat running commands on
+  the user's machine as a privileged action: confirm explicitly, isolate it from
+  the request layer, and document the trust-boundary expansion in the
+  architecture docs first.
 
 ## Agent Files
 

@@ -24,7 +24,7 @@
 | M6 | 媒体素材工作流 | 截图与预览上传链路 | 已完成（[阶段计划](archive/m6-media-workflows.md)） |
 | M7 | TestFlight 与送审准备 | 首期范围能力闭环 | 已完成（TestFlight [阶段计划](archive/m7-testflight.md) 与送审准备 [阶段计划](archive/m7-submission-release.md) 两半均已交付） |
 | M8 | Skill 完备化与发布 | 任务级能力打磨、打包与使用文档 | 已完成（[阶段计划](archive/m8-skill-packaging.md)；插件以单仓库 git-subdir 形态从本仓 `plugin/` 子目录经 [marketplace](https://github.com/sesamehut/plugins-marketplace) 分发，安装命令 `/plugin install app-store-connect@sesamehut-plugins`。M8 阶段计划记录的是当时的独立 plugin 仓库方案，后调整为单仓库 git-subdir，详见 [Skill 入口与 CLI 策略](../implementation/skill-interface.md)的分发路径） |
-| M9+ | 扩展与持续事项 | 商业化/营销能力、契约升级、生态复核 | 按需 |
+| M9+ | 扩展与持续事项 | 域内写补全、商业化/营销/受限能力、后续集成、契约升级与生态复核 | 按需 |
 
 依赖关系大体线性：M0 → M1 → M2 → M3 是地基链，必须按序完成；M4 之后的业务能力都依赖 M3，彼此可按价值调序，其中 M5 与 M6 互相独立，可并行或交换顺序。
 
@@ -146,9 +146,50 @@
 
 ## M9+ 扩展与持续事项
 
-不设固定排期，按需求拉动：
+**方向**：对标 `App-Store-Connect-CLI` 的能力广度并追平，超越点在受众——让不写代码的用户用自然语言驱动全流程。M9+ 不收缩功能面，按价值把缺口逐块补齐。
 
-- **扩展能力**——商业化资源（内购、订阅、价格、优惠）、营销资源（自定义产品页、应用内事件）。
-- **受限能力**——组织与访问、Provisioning。
-- **后续集成**——Xcode Cloud、Webhooks、EU 替代分发。
-- **持续事项**——Apple 规范升级按 [架构总览](../architecture/overview.md) 的升级策略执行；当官方 SDK、官方 MCP server 或社区事实标准出现时，按 [SDK 对比](../research/sdk-comparison.md) 与 [生态调研](../research/mcp-skill-landscape.md) 列出的复核点重新评估。
+不设固定排期，按价值拉动；每项仍以“一条端到端可验证链路”收尾。落地任一项前，先按 [架构总览](../architecture/overview.md) 的契约升级策略确认对应资源已在再生成的契约中，再复核 [产品范围](../product/api-scope.md) 的边界判断。下列项按“离现有能力的距离”从近到远排列。
+
+### 域内写能力补全（最近，扩展已交付的域）
+
+Apple API 支持、当前只读或部分写、设计决策中暂缓的写（属“暂未实现”而非“Apple 不支持”）。这些写还没登记进 `registry`，调用会落到未知子命令；补全时应一并登记到 planned 路径：
+
+- **分阶段发布写控制**——当前只读 `appStoreVersionPhasedRelease` 状态，缺启用、暂停、恢复、加速到全量的写（设计决策 B2 暂缓）。
+- **年龄分级声明写入**——当前只读 `ageRatingDeclaration`，缺问卷 PATCH（设计决策 D1 暂缓）。
+- **出口合规声明文档**——当前仅写 Build 上的 `usesNonExemptEncryption` 布尔位，缺 `appEncryptionDeclaration` 文档上传这一独立的 upload-like 流程（设计决策 E2 暂缓）。
+
+### 扩展能力（新开资源域）
+
+[产品范围](../product/api-scope.md) 已列为扩展能力，按商业价值拉动：
+
+- **商业化资源**——内购、订阅与订阅组、价格与价格点、促销优惠/优惠码/挽回优惠、地区可用性；内购测试所需的 sandbox 测试员一并评估。
+- **营销资源**——自定义产品页、应用内事件、产品页实验（实验结果分析按 [产品范围](../product/api-scope.md) 仍暂缓）。
+
+### 受限能力（API 支持但受角色/账号约束）
+
+- **组织与访问**——公开 API 支持范围内的用户、角色与邀请管理（创建/下载 API key 仍按 [产品范围](../product/api-scope.md) 明确不支持）。
+- **Provisioning**——证书、Bundle IDs、设备、配置文件等签名材料；本地代码签名/打包不在此列（见下文“明确划在范围外”）。
+
+### 后续集成（依赖额外资格或独立子系统）
+
+- **Xcode Cloud**——产品、工作流与构建运行等 CI 资源。
+- **Webhooks**——ASC webhooks 订阅与事件配置（自建接收端仍按 [产品范围](../product/api-scope.md) 暂缓）。
+- **EU 替代分发**——替代分发密钥、marketplace 等条件能力，依赖账号资格与业务条款。
+- **其他较新资源域**——App Clips 体验、Game Center、App Store 提名（nominations）等。这些随 Apple spec 演进，实现前必须对照再生成的契约确认资源形态，避免按过期研究动工。
+
+### 持续事项（维护与可信度）
+
+- **契约升级**——Apple 规范升级按 [架构总览](../architecture/overview.md) 的升级策略执行；周更的契约漂移检查已在监控新版本发布。
+- **媒体端点迁移预案**——截图/预览上传当前骑在 Apple `@deprecated` 端点上，是唯一会被 Apple 单方面打断的硬依赖；持续跟踪官方新上传模型，提前准备迁移路径（见 M6 [阶段计划](archive/m6-media-workflows.md) 的弃用端点隔离策略）。
+- **行为实机核实**——消化代码中标注的 live-verify 项（如裸建测试员是否发邀请邮件、`usesNonExemptEncryption=false` 是否单独清合规、release 的异步与不可逆语义），用冒烟脚本的可逆/只读路径逐项验证并回写文档，把“暂标待核实”升级为“经验证”。
+- **生态复核**——当官方 SDK、官方 MCP server 或社区事实标准出现时，按 [SDK 对比](../research/sdk-comparison.md) 与 [生态调研](../research/mcp-skill-landscape.md) 列出的复核点重新评估。
+
+### 对标并超越的延伸方向（跨出当前 ASC-only 边界）
+
+要追平 `App-Store-Connect-CLI` 的广度，下列方向超出当前“纯 ASC REST API 薄层”的架构。它们不被排除，但纳入前需要先在 [架构总览](../architecture/overview.md) 与 [产品范围](../product/api-scope.md) 中确认架构与信任边界的扩张，再立项：
+
+- **Apple Search Ads / Apple Ads**——独立的 Apple Search Ads Campaign Management API；要覆盖广告能力需新增一条认证与契约线，与现有 ASC 契约并列。
+- **本地 Apple 工具链编排**——Xcode 构建、公证（notarization）、代码签名、build 二进制上传等本地能力。对 agent 而言这是“在用户机器上代为执行命令”，对不写代码的用户价值很大，但会把信任边界从“只调 Apple REST API”扩展到“执行本地命令”，需专门设计与显式确认。
+- **第三方服务集成（如 RevenueCat、ASO 平台）**——非 Apple 官方 API，作为可选增值能力评估。
+
+Apple 根本没有公开 API 的能力（协议/税务/银行/收款、审核中心往来消息、创建/下载 API key）属 Apple 的硬限制——竞品同样无法自动化，这不是本项目的取舍。这类只能在网页端完成的动作，本 skill 的职责是用自然语言把前置条件和操作步骤讲清楚，引导用户去网页端完成，而不是假装能做。
