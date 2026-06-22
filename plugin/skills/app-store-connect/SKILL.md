@@ -1,7 +1,7 @@
 ---
 name: app-store-connect
 description: Operates Apple App Store Connect through a bundled CLI. Lists apps and App Store versions; reads and updates store metadata and localizations (description, keywords, what's new, promotional text, app name, subtitle, privacy policy); adds new locales; reads customer reviews and posts or replaces developer responses; downloads sales, finance, and analytics reports to disk; uploads, lists, reorders, and deletes App Store screenshots and preview videos; manages TestFlight beta groups, testers, test info, beta review detail and submission, and reads/downloads beta feedback; lists builds, resolves the latest processed build, edits build distribution and notes, and expires builds; runs an App Store submission-readiness preflight, sets review contact/demo detail, configures release timing and the export-compliance flag, reads submission status, and submits, cancels, or releases a version for App Review. Use when the user asks about App Store Connect, ASC, app metadata, store listings, localization, customer reviews, review replies, sales or download numbers, finance reports, analytics, TestFlight, beta testers, beta groups, beta feedback, builds, App Store reports, screenshots, preview videos, submitting an app for review, App Review, release timing, export compliance, or releasing a version.
-compatibility: Requires Node.js >=22.12 and network access to api.appstoreconnect.apple.com. Runs in Claude Code on the user's machine.
+compatibility: Requires Node.js >=22.12 and network access to api.appstoreconnect.apple.com. Runs on the user's machine in any agent that can execute the bundled CLI; not bound to Claude Code.
 ---
 
 # App Store Connect
