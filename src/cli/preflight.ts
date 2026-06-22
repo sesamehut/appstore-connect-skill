@@ -2,6 +2,10 @@ import {
   loadAscCredentialsFromEnv,
   ASC_ENV_VARS,
 } from "../auth/credentials.js";
+import {
+  inspectCredentialFormat,
+  inspectInlinePrivateKey,
+} from "../auth/credential-format.js";
 import { AscCredentialError } from "../errors.js";
 import { ASC_VENDOR_NUMBER_ENV } from "./report-flags.js";
 
@@ -31,6 +35,12 @@ export interface DoctorCheck {
   readonly status: "pass" | "fail";
   readonly detail: string;
   readonly fix?: string;
+  /**
+   * Non-fatal advisories: a passing check can still flag a likely mistake
+   * (e.g. a Key ID / Issuer ID that loaded but looks swapped). Warnings never
+   * change `status`, so the offline exit-code contract is unaffected.
+   */
+  readonly warnings?: readonly string[];
 }
 
 /**
@@ -137,10 +147,14 @@ export async function checkCredentials(
 ): Promise<DoctorCheck> {
   try {
     const credentials = await loadAscCredentialsFromEnv(env);
+    const warnings = inspectCredentialFormat(env).map(
+      (warning) => warning.message,
+    );
     return {
       name: "credentials",
       status: "pass",
       detail: `Loaded a ${credentials.keyForm} key (key id ending ...${credentials.keyId.slice(-4)})`,
+      ...(warnings.length > 0 && { warnings }),
     };
   } catch (error) {
     if (error instanceof AscCredentialError) {
@@ -148,7 +162,7 @@ export async function checkCredentials(
         name: "credentials",
         status: "fail",
         detail: error.message,
-        fix: credentialFix(error),
+        fix: credentialFix(error, env),
       };
     }
     throw error;
@@ -173,7 +187,10 @@ export function checkVendorNumber(
   };
 }
 
-function credentialFix(error: AscCredentialError): string {
+function credentialFix(
+  error: AscCredentialError,
+  env: Readonly<Record<string, string | undefined>>,
+): string {
   switch (error.reason) {
     case "missing-key-id":
       return `Set ${ASC_ENV_VARS.keyId}. Keys live in App Store Connect → Users and Access → Integrations.`;
@@ -183,7 +200,13 @@ function credentialFix(error: AscCredentialError): string {
       return `Unset one of ${ASC_ENV_VARS.privateKey} / ${ASC_ENV_VARS.privateKeyPath}.`;
     case "unreadable-private-key-file":
       return `Fix the path in ${ASC_ENV_VARS.privateKeyPath} so the .p8 file is readable.`;
-    case "invalid-private-key":
-      return "Use the unmodified .p8 file content downloaded from App Store Connect.";
+    case "invalid-private-key": {
+      // Lead with the specific copy-paste mistake when the raw value betrays
+      // one; the generic guidance still follows as the fallback.
+      const hint = inspectInlinePrivateKey(env[ASC_ENV_VARS.privateKey]);
+      const generic =
+        "Use the unmodified .p8 file content downloaded from App Store Connect.";
+      return hint === undefined ? generic : `${hint} ${generic}`;
+    }
   }
 }

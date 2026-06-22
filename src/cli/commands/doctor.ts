@@ -44,6 +44,9 @@ export const doctorCommand = defineCommand({
       if (check.fix !== undefined) {
         cli.io.err(`     fix: ${check.fix}`);
       }
+      for (const warning of check.warnings ?? []) {
+        cli.io.err(`     warn: ${warning}`);
+      }
     }
     return ok ? EXIT.success : EXIT.configuration;
   },
